@@ -86,6 +86,14 @@ Background job `RefreshTokenCleanup` deletes expired/revoked refresh tokens.
 
 Device deletion removes the peer (by public key) before the DB row is deleted.
 
+## Peer sync helper (Phase 4)
+
+```bash
+dotnet run --project tools/wg-peer-sync -- ./peer-state
+```
+
+Reads File provisioner JSON and prints `wg set ...` commands (dry-run). `--apply` is refused unless `MYVPN_WG_SYNC_ALLOW_APPLY=1`, and even then execution is not implemented in this scaffold.
+
 ## Example
 
 ```bash
