@@ -35,6 +35,8 @@ public interface IRefreshTokenRepository
     Task<RefreshToken?> FindByHashAsync(string tokenHash, CancellationToken cancellationToken = default);
     Task AddAsync(RefreshToken token, CancellationToken cancellationToken = default);
     Task RevokeFamilyAsync(Guid tokenFamilyId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default);
+    Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default);
+    Task<int> DeleteExpiredOrRevokedAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

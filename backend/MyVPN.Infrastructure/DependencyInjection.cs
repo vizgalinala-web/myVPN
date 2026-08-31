@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MyVPN.Application.Abstractions;
 using MyVPN.Application.Options;
+using MyVPN.Infrastructure.Background;
 using MyVPN.Infrastructure.Persistence;
 using MyVPN.Infrastructure.Security;
 using MyVPN.Infrastructure.Vpn;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
         services.Configure<RateLimitOptions>(configuration.GetSection(RateLimitOptions.SectionName));
         services.Configure<VpnOptions>(configuration.GetSection(VpnOptions.SectionName));
+        services.Configure<RefreshTokenCleanupOptions>(configuration.GetSection(RefreshTokenCleanupOptions.SectionName));
 
         services.AddDbContext<MyVpnDbContext>(options =>
             options.UseNpgsql(connectionString, npgsql =>
@@ -38,9 +40,30 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
         services.AddSingleton<IRefreshTokenService, RefreshTokenService>();
         services.AddSingleton<IWireGuardPublicKeyValidator, WireGuardPublicKeyValidator>();
-        services.AddSingleton<IWireGuardPeerProvisioner, InMemoryWireGuardPeerProvisioner>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
 
+        RegisterPeerProvisioner(services, configuration);
+        services.AddHostedService<RefreshTokenCleanupBackgroundService>();
+
         return services;
+    }
+
+    private static void RegisterPeerProvisioner(IServiceCollection services, IConfiguration configuration)
+    {
+        var mode = configuration.GetSection(VpnOptions.SectionName).GetValue<string>("PeerProvisioner") ?? "InMemory";
+        if (string.Equals(mode, "File", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<InMemoryWireGuardPeerProvisioner>();
+            services.AddSingleton<FileSystemWireGuardPeerProvisioner>();
+            services.AddSingleton<IWireGuardPeerProvisioner>(sp =>
+                new CompositeWireGuardPeerProvisioner(new IWireGuardPeerProvisioner[]
+                {
+                    sp.GetRequiredService<InMemoryWireGuardPeerProvisioner>(),
+                    sp.GetRequiredService<FileSystemWireGuardPeerProvisioner>()
+                }));
+            return;
+        }
+
+        services.AddSingleton<IWireGuardPeerProvisioner, InMemoryWireGuardPeerProvisioner>();
     }
 }

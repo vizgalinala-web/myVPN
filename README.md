@@ -14,17 +14,13 @@ Privacy-focused VPN product. This repository currently delivers **Phase 3**: Bac
 
 ```
 backend/
-├── MyVPN.Api/              # HTTP API, auth middleware, composition root
-├── MyVPN.Application/      # Use cases, DTOs, validation
-├── MyVPN.Domain/           # Entities and enums
-├── MyVPN.Infrastructure/   # EF Core, PostgreSQL, crypto, seed
+├── MyVPN.Api/
+├── MyVPN.Application/
+├── MyVPN.Domain/
+├── MyVPN.Infrastructure/
 └── tests/
-    ├── MyVPN.UnitTests/
-    └── MyVPN.IntegrationTests/
+clients/                    # Phase 4+ native client notes
 docs/
-├── architecture.md
-├── backend.md
-└── security.md
 docker-compose.yml
 .env.example
 ```
@@ -113,6 +109,7 @@ Do **not** commit production secrets.
 | POST | `/api/auth/login` | Public |
 | POST | `/api/auth/refresh` | Public (refresh token body) |
 | POST | `/api/auth/logout` | Public (refresh token body) |
+| POST | `/api/auth/change-password` | Bearer |
 | GET | `/api/me` | Bearer |
 | GET | `/api/servers` | Public (enabled only) |
 | GET | `/api/devices` | Bearer |

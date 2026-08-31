@@ -103,6 +103,37 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
         }
     }
 
+    public async Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default)
+    {
+        var tokens = await _db.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var token in tokens)
+        {
+            token.RevokedAt = revokedAt;
+            token.RevokedByIp = revokedByIp;
+        }
+    }
+
+    public async Task<int> DeleteExpiredOrRevokedAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default)
+    {
+        var stale = await _db.RefreshTokens
+            .Where(t =>
+                (t.ExpiresAt < olderThan) ||
+                (t.RevokedAt != null && t.RevokedAt < olderThan))
+            .ToListAsync(cancellationToken);
+
+        if (stale.Count == 0)
+        {
+            return 0;
+        }
+
+        _db.RefreshTokens.RemoveRange(stale);
+        await _db.SaveChangesAsync(cancellationToken);
+        return stale.Count;
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => _db.SaveChangesAsync(cancellationToken);
 }

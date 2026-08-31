@@ -22,6 +22,7 @@ public sealed class AuthService
     private readonly IValidator<LoginRequest> _loginValidator;
     private readonly IValidator<RefreshRequest> _refreshValidator;
     private readonly IValidator<LogoutRequest> _logoutValidator;
+    private readonly IValidator<ChangePasswordRequest> _changePasswordValidator;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
@@ -36,6 +37,7 @@ public sealed class AuthService
         IValidator<LoginRequest> loginValidator,
         IValidator<RefreshRequest> refreshValidator,
         IValidator<LogoutRequest> logoutValidator,
+        IValidator<ChangePasswordRequest> changePasswordValidator,
         ILogger<AuthService> logger)
     {
         _users = users;
@@ -49,6 +51,7 @@ public sealed class AuthService
         _loginValidator = loginValidator;
         _refreshValidator = refreshValidator;
         _logoutValidator = logoutValidator;
+        _changePasswordValidator = changePasswordValidator;
         _logger = logger;
     }
 
@@ -190,6 +193,37 @@ public sealed class AuthService
             await _refreshTokens.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Refresh token revoked on logout. UserId={UserId}", existing.UserId);
         }
+    }
+
+    public async Task ChangePasswordAsync(
+        Guid userId,
+        ChangePasswordRequest request,
+        string? clientIp,
+        CancellationToken cancellationToken = default)
+    {
+        await ValidateAsync(_changePasswordValidator, request, cancellationToken);
+
+        var user = await _users.FindByIdAsync(userId, cancellationToken);
+        if (user is null || !user.IsActive)
+        {
+            throw new AppException(ErrorCodes.Unauthorized, "Unauthorized", "Authentication is required.", 401);
+        }
+
+        if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            throw new AppException(
+                ErrorCodes.InvalidCredentials,
+                "Invalid credentials",
+                "Current password is incorrect.",
+                401);
+        }
+
+        user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+        user.UpdatedAt = _clock.UtcNow;
+        await _refreshTokens.RevokeAllForUserAsync(userId, _clock.UtcNow, clientIp, cancellationToken);
+        await _users.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Password changed and refresh tokens revoked. UserId={UserId}", userId);
     }
 
     private async Task<TokenResponse> IssueTokensAsync(

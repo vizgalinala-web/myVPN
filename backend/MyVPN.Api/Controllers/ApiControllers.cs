@@ -65,6 +65,28 @@ public sealed class AuthController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Changes the password for the authenticated user and revokes all refresh tokens.
+    /// </summary>
+    [Authorize]
+    [HttpPost("change-password")]
+    [EnableRateLimiting("auth-login")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var value = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(value, out var userId))
+        {
+            throw new AppException(ErrorCodes.Unauthorized, "Unauthorized", "Authentication is required.", 401);
+        }
+
+        await _auth.ChangePasswordAsync(userId, request, GetClientIp(), cancellationToken);
+        return NoContent();
+    }
+
     private string? GetClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
 }
 

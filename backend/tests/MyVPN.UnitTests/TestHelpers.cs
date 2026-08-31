@@ -54,6 +54,7 @@ internal static class TestHelpers
             new LoginRequestValidator(),
             new RefreshRequestValidator(),
             new LogoutRequestValidator(),
+            new ChangePasswordRequestValidator(),
             NullLogger<AuthService>.Instance);
     }
 
