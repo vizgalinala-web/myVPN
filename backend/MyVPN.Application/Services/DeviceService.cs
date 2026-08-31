@@ -13,6 +13,7 @@ public sealed class DeviceService
     private readonly IDeviceRepository _devices;
     private readonly IUserRepository _users;
     private readonly IWireGuardPublicKeyValidator _publicKeyValidator;
+    private readonly VpnConfigurationService _vpnConfiguration;
     private readonly IClock _clock;
     private readonly IValidator<CreateDeviceRequest> _createValidator;
     private readonly ILogger<DeviceService> _logger;
@@ -21,6 +22,7 @@ public sealed class DeviceService
         IDeviceRepository devices,
         IUserRepository users,
         IWireGuardPublicKeyValidator publicKeyValidator,
+        VpnConfigurationService vpnConfiguration,
         IClock clock,
         IValidator<CreateDeviceRequest> createValidator,
         ILogger<DeviceService> logger)
@@ -28,6 +30,7 @@ public sealed class DeviceService
         _devices = devices;
         _users = users;
         _publicKeyValidator = publicKeyValidator;
+        _vpnConfiguration = vpnConfiguration;
         _clock = clock;
         _createValidator = createValidator;
         _logger = logger;
@@ -124,6 +127,7 @@ public sealed class DeviceService
                 404);
         }
 
+        await _vpnConfiguration.DeprovisionDeviceAsync(device, cancellationToken);
         _devices.Remove(device);
         await _devices.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Device deleted. UserId={UserId} DeviceId={DeviceId}", userId, deviceId);

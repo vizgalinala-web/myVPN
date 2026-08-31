@@ -7,6 +7,7 @@ using MyVPN.Application.Validation;
 using MyVPN.Domain.Entities;
 using MyVPN.Infrastructure.Persistence;
 using MyVPN.Infrastructure.Security;
+using MyVPN.Infrastructure.Vpn;
 
 namespace MyVPN.UnitTests;
 
@@ -59,10 +60,23 @@ internal static class TestHelpers
     public static DeviceService CreateDeviceService(MyVpnDbContext db, TestClock? clock = null)
     {
         clock ??= new TestClock();
+        var provisioner = new InMemoryWireGuardPeerProvisioner(NullLogger<InMemoryWireGuardPeerProvisioner>.Instance);
+        var vpnOptions = Options.Create(new VpnOptions());
+        var vpnConfiguration = new VpnConfigurationService(
+            new DeviceRepository(db),
+            new UserRepository(db),
+            new VpnServerRepository(db),
+            new VpnIpAllocator(),
+            provisioner,
+            clock,
+            vpnOptions,
+            NullLogger<VpnConfigurationService>.Instance);
+
         return new DeviceService(
             new DeviceRepository(db),
             new UserRepository(db),
             new WireGuardPublicKeyValidator(),
+            vpnConfiguration,
             clock,
             new CreateDeviceRequestValidator(),
             NullLogger<DeviceService>.Instance);

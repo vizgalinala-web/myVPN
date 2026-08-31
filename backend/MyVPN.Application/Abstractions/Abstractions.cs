@@ -17,6 +17,7 @@ public interface IDeviceRepository
     Task<IReadOnlyList<Device>> ListByUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Device?> FindByIdForUserAsync(Guid deviceId, Guid userId, CancellationToken cancellationToken = default);
     Task<bool> PublicKeyExistsAsync(string publicKey, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> ListAssignedVpnAddressesAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Device device, CancellationToken cancellationToken = default);
     void Remove(Device device);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
@@ -25,6 +26,7 @@ public interface IDeviceRepository
 public interface IVpnServerRepository
 {
     Task<IReadOnlyList<VpnServer>> ListEnabledAsync(CancellationToken cancellationToken = default);
+    Task<VpnServer?> FindEnabledByIdAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
 public interface IRefreshTokenRepository

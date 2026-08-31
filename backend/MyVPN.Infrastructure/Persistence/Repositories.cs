@@ -44,6 +44,12 @@ public sealed class DeviceRepository : IDeviceRepository
     public Task<bool> PublicKeyExistsAsync(string publicKey, CancellationToken cancellationToken = default)
         => _db.Devices.AnyAsync(d => d.PublicKey == publicKey, cancellationToken);
 
+    public async Task<IReadOnlyList<string>> ListAssignedVpnAddressesAsync(CancellationToken cancellationToken = default)
+        => await _db.Devices.AsNoTracking()
+            .Where(d => d.VpnAddress != null && d.VpnAddress != "")
+            .Select(d => d.VpnAddress!)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(Device device, CancellationToken cancellationToken = default)
         => await _db.Devices.AddAsync(device, cancellationToken);
 
@@ -64,6 +70,9 @@ public sealed class VpnServerRepository : IVpnServerRepository
             .Where(s => s.Enabled)
             .OrderBy(s => s.Country).ThenBy(s => s.Name)
             .ToListAsync(cancellationToken);
+
+    public Task<VpnServer?> FindEnabledByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        => _db.VpnServers.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id && s.Enabled, cancellationToken);
 }
 
 public sealed class RefreshTokenRepository : IRefreshTokenRepository
