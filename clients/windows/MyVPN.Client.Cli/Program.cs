@@ -14,6 +14,7 @@ try
         "keygen" => Keygen(),
         "register" => await RegisterAsync(args),
         "login-config" => await LoginConfigAsync(args),
+        "save-config" => await LoginConfigAsync(args),
         "servers" => await ServersAsync(args),
         "devices" => await DevicesAsync(args),
         "disconnect" => await DisconnectAsync(args),
@@ -56,6 +57,7 @@ static async Task<int> LoginConfigAsync(string[] args)
     var password = Require(args, "--password");
     var deviceName = Get(args, "--device-name") ?? "Windows CLI";
     var serverIdText = Get(args, "--server-id");
+    var outPath = Get(args, "--out");
 
     var (priv, pub) = WireGuardKeyPair.Generate();
     using var client = new MyVpnApiClient(new Uri(api));
@@ -73,9 +75,20 @@ static async Task<int> LoginConfigAsync(string[] args)
 
     var config = await client.GetConfigurationAsync(device.Id, server.Id);
     var quick = MyVpnApiClient.BuildLocalQuickConfig(config, priv);
-    Console.WriteLine(quick);
+    if (outPath is not null)
+    {
+        var full = Path.GetFullPath(outPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(full) ?? ".");
+        await File.WriteAllTextAsync(full, quick);
+        Console.WriteLine(full);
+    }
+    else
+    {
+        Console.WriteLine(quick);
+    }
+
     Console.Error.WriteLine($"# deviceId={device.Id} server={server.Name} address={config.Address}");
-    Console.Error.WriteLine("# PrivateKey included only in local output. It was not uploaded.");
+    Console.Error.WriteLine("# PrivateKey included only in local output/file. It was not uploaded.");
     return 0;
 }
 
@@ -191,7 +204,8 @@ MyVPN Windows client CLI (Phase 5)
 Commands:
   keygen
   register --api <url> --email <email> --password <password>
-  login-config --api <url> --email <email> --password <password> [--device-name <name>] [--server-id <guid>]
+  login-config --api <url> --email <email> --password <password> [--device-name <name>] [--server-id <guid>] [--out <file>]
+  save-config  (alias of login-config; prefer --out <file.conf>)
   servers --api <url>
   devices --api <url> --email <email> --password <password>
   disconnect --api <url> --email <email> --password <password> --device-id <guid>

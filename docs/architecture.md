@@ -6,8 +6,9 @@
 - **Phase 2**: Backend API, PostgreSQL, authentication, devices/servers read API
 - **Phase 3**: WireGuard client configuration, IP allocation, disconnect, device limits/history, password change, refresh cleanup, file peer-state adapter
 - **Phase 4**: Windows API client/CLI scaffold, iOS Swift API package scaffold, `wg-peer-sync` helper
-- **Phase 5** (current): Peer-sync remove detection + watch mode, Windows client unit tests/CLI expansion, Compose File peer-state wiring
-- **Later**: Real `wg` apply execution, Network Extension / Wintun tunnels, Kill Switch, DNS leak protection
+- **Phase 5**: Peer-sync remove detection + watch mode, Windows client unit tests/CLI expansion, Compose File peer-state wiring, GitHub Actions CI
+- **Phase 6** (current): Safe `wg` apply executor (env-gated, no shell), peer-sync planner tests, CLI `--out` config save
+- **Later**: Network Extension / Wintun tunnels, Kill Switch, DNS leak protection
 
 See [wireguard.md](wireguard.md) and [../clients/README.md](../clients/README.md).
 

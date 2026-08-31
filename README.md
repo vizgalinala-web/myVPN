@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 5**: Backend API through Phase 3, Windows/iOS API client scaffolds, and a peer-sync dry-run agent with remove detection.
+Privacy-focused VPN product. This repository currently delivers **Phase 6**: Backend API through Phase 3, Windows/iOS client scaffolds, peer-sync with optional safe `wg` apply, and GitHub Actions CI.
 
 ## Current stack
 

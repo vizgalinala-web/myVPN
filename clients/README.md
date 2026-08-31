@@ -47,6 +47,7 @@ Next iOS steps (not in this repo yet):
 ```bash
 dotnet run --project tools/wg-peer-sync -- ./peer-state
 dotnet run --project tools/wg-peer-sync -- ./peer-state --watch
+MYVPN_WG_SYNC_ALLOW_APPLY=1 dotnet run --project tools/wg-peer-sync -- ./peer-state --apply
 ```
 
-Reads File provisioner JSON and prints `wg set ...` / `remove` commands (dry-run). Uses a local cache to detect deleted peers. Does not execute `wg` unless a future apply path is enabled.
+Reads File provisioner JSON and prints or applies `wg set ...` / `remove`. Uses a local cache to detect deleted peers. Apply mode requires `MYVPN_WG_SYNC_ALLOW_APPLY=1` and runs `wg` without a shell.
