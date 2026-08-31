@@ -21,3 +21,4 @@ coverage/
 pgdata/
 peer-state/
 **/peer-state/
+**/.wg-peer-sync.cache.json
