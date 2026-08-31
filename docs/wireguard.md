@@ -74,10 +74,6 @@ Rate limits (configurable): `DeviceConfiguration` and `DeviceDisconnect` (defaul
 
 Background job `RefreshTokenCleanup` deletes expired/revoked refresh tokens.
 
-## Connection history
-
-`GET /api/devices/{id}/connections?take=20` returns recent Connected/Disconnected events for an owned device.
-
 ## Peer provisioner
 
 `InMemoryWireGuardPeerProvisioner` records peers in process memory and logs upserts/removals.

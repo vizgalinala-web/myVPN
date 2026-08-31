@@ -44,25 +44,6 @@ public sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
     }
 }
 
-public sealed class DeviceConnectionEventConfiguration : IEntityTypeConfiguration<DeviceConnectionEvent>
-{
-    public void Configure(EntityTypeBuilder<DeviceConnectionEvent> builder)
-    {
-        builder.ToTable("device_connection_events");
-        builder.HasKey(x => x.Id);
-        builder.Property(x => x.EventType).HasConversion<string>().HasMaxLength(32).IsRequired();
-        builder.Property(x => x.VpnAddress).HasMaxLength(64);
-        builder.Property(x => x.CreatedAt).IsRequired();
-        builder.HasIndex(x => x.DeviceId);
-        builder.HasIndex(x => x.UserId);
-        builder.HasIndex(x => x.CreatedAt);
-        builder.HasOne(x => x.Device)
-            .WithMany()
-            .HasForeignKey(x => x.DeviceId)
-            .OnDelete(DeleteBehavior.Cascade);
-    }
-}
-
 public sealed class VpnServerConfiguration : IEntityTypeConfiguration<VpnServer>
 {
     public void Configure(EntityTypeBuilder<VpnServer> builder)
@@ -93,8 +74,6 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         builder.Property(x => x.TokenFamilyId).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.ExpiresAt).IsRequired();
-        builder.Property(x => x.CreatedByIp).HasMaxLength(64);
-        builder.Property(x => x.RevokedByIp).HasMaxLength(64);
         builder.HasIndex(x => x.TokenHash).IsUnique();
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.ExpiresAt);

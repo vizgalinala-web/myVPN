@@ -37,5 +37,6 @@ public static class ErrorCodes
     public const string Unauthorized = "UNAUTHORIZED";
     public const string NotFound = "NOT_FOUND";
     public const string Conflict = "CONFLICT";
+    public const string DeviceLimitReached = "DEVICE_LIMIT_REACHED";
     public const string RateLimited = "RATE_LIMITED";
 }

@@ -18,7 +18,7 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- devices \
 ```
 
 - `MyVPN.Client` — HTTP API SDK + local WireGuard keygen (NSec)
-- `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / connections / refresh / logout
+- `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / refresh / logout
 - `MyVPN.Client.Tests` — keygen + config builder unit tests
 - Private keys stay local; API only receives public keys
 - Tunnel / Kill Switch / Wintun not implemented yet

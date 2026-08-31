@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyVPN.Application.Abstractions;
+using MyVPN.Application.Common;
 using MyVPN.Domain.Entities;
 
 namespace MyVPN.Infrastructure.Persistence;
@@ -53,6 +54,76 @@ public sealed class DeviceRepository : IDeviceRepository
     public Task<int> CountByUserAsync(Guid userId, CancellationToken cancellationToken = default)
         => _db.Devices.CountAsync(d => d.UserId == userId, cancellationToken);
 
+    public async Task<DeviceCreateResult> TryAddWithinUserLimitAsync(
+        Guid userId,
+        int maxDevices,
+        Device device,
+        CancellationToken cancellationToken = default)
+    {
+        if (_db.Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL")
+        {
+            return await TryAddWithinUserLimitCoreAsync(userId, maxDevices, device, useAdvisoryLock: false, cancellationToken);
+        }
+
+        var strategy = _db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var result = await TryAddWithinUserLimitCoreAsync(userId, maxDevices, device, useAdvisoryLock: true, cancellationToken);
+                if (result == DeviceCreateResult.Success)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                else
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                }
+
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        });
+    }
+
+    private async Task<DeviceCreateResult> TryAddWithinUserLimitCoreAsync(
+        Guid userId,
+        int maxDevices,
+        Device device,
+        bool useAdvisoryLock,
+        CancellationToken cancellationToken)
+    {
+        if (useAdvisoryLock)
+        {
+            var bytes = userId.ToByteArray();
+            var lockKey1 = BitConverter.ToInt32(bytes, 0);
+            var lockKey2 = BitConverter.ToInt32(bytes, 4);
+            await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT pg_advisory_xact_lock({lockKey1}, {lockKey2})",
+                cancellationToken);
+        }
+
+        var count = await _db.Devices.CountAsync(d => d.UserId == userId, cancellationToken);
+        if (count >= maxDevices)
+        {
+            return DeviceCreateResult.LimitReached;
+        }
+
+        if (await _db.Devices.AnyAsync(d => d.PublicKey == device.PublicKey, cancellationToken))
+        {
+            return DeviceCreateResult.DuplicatePublicKey;
+        }
+
+        await _db.Devices.AddAsync(device, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+        return DeviceCreateResult.Success;
+    }
+
     public async Task AddAsync(Device device, CancellationToken cancellationToken = default)
         => await _db.Devices.AddAsync(device, cancellationToken);
 
@@ -90,7 +161,7 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
     public async Task AddAsync(RefreshToken token, CancellationToken cancellationToken = default)
         => await _db.RefreshTokens.AddAsync(token, cancellationToken);
 
-    public async Task RevokeFamilyAsync(Guid tokenFamilyId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default)
+    public async Task RevokeFamilyAsync(Guid tokenFamilyId, DateTimeOffset revokedAt, CancellationToken cancellationToken = default)
     {
         var tokens = await _db.RefreshTokens
             .Where(t => t.TokenFamilyId == tokenFamilyId && t.RevokedAt == null)
@@ -99,11 +170,10 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
         foreach (var token in tokens)
         {
             token.RevokedAt = revokedAt;
-            token.RevokedByIp = revokedByIp;
         }
     }
 
-    public async Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default)
+    public async Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken cancellationToken = default)
     {
         var tokens = await _db.RefreshTokens
             .Where(t => t.UserId == userId && t.RevokedAt == null)
@@ -112,7 +182,6 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
         foreach (var token in tokens)
         {
             token.RevokedAt = revokedAt;
-            token.RevokedByIp = revokedByIp;
         }
     }
 
@@ -133,31 +202,6 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
         await _db.SaveChangesAsync(cancellationToken);
         return stale.Count;
     }
-
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
-        => _db.SaveChangesAsync(cancellationToken);
-}
-
-public sealed class DeviceConnectionEventRepository : IDeviceConnectionEventRepository
-{
-    private readonly MyVpnDbContext _db;
-
-    public DeviceConnectionEventRepository(MyVpnDbContext db) => _db = db;
-
-    public async Task AddAsync(DeviceConnectionEvent connectionEvent, CancellationToken cancellationToken = default)
-        => await _db.DeviceConnectionEvents.AddAsync(connectionEvent, cancellationToken);
-
-    public async Task<IReadOnlyList<DeviceConnectionEvent>> ListByDeviceForUserAsync(
-        Guid deviceId,
-        Guid userId,
-        int take,
-        CancellationToken cancellationToken = default)
-        => await _db.DeviceConnectionEvents.AsNoTracking()
-            .Where(e => e.DeviceId == deviceId && e.UserId == userId)
-            .OrderByDescending(e => e.CreatedAt)
-            .ThenByDescending(e => e.Id)
-            .Take(Math.Clamp(take, 1, 100))
-            .ToListAsync(cancellationToken);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => _db.SaveChangesAsync(cancellationToken);

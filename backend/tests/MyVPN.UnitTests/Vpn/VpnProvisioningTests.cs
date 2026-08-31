@@ -130,7 +130,6 @@ public sealed class VpnProvisioningTests
             new DeviceRepository(db),
             new UserRepository(db),
             new VpnServerRepository(db),
-            new DeviceConnectionEventRepository(db),
             new VpnIpAllocator(),
             new InMemoryWireGuardPeerProvisioner(NullLogger<InMemoryWireGuardPeerProvisioner>.Instance),
             clock,

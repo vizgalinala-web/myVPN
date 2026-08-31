@@ -68,12 +68,10 @@ internal static class TestHelpers
     {
         clock ??= new TestClock();
         var provisioner = new InMemoryWireGuardPeerProvisioner(NullLogger<InMemoryWireGuardPeerProvisioner>.Instance);
-        var events = new DeviceConnectionEventRepository(db);
         var vpnConfiguration = new VpnConfigurationService(
             new DeviceRepository(db),
             new UserRepository(db),
             new VpnServerRepository(db),
-            events,
             new VpnIpAllocator(),
             provisioner,
             clock,
@@ -83,7 +81,6 @@ internal static class TestHelpers
         return new DeviceService(
             new DeviceRepository(db),
             new UserRepository(db),
-            events,
             new WireGuardPublicKeyValidator(),
             vpnConfiguration,
             clock,

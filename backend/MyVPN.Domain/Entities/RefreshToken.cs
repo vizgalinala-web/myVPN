@@ -14,8 +14,6 @@ public class RefreshToken
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public Guid? ReplacedByTokenId { get; set; }
-    public string? CreatedByIp { get; set; }
-    public string? RevokedByIp { get; set; }
 
     public User User { get; set; } = null!;
     public RefreshToken? ReplacedByToken { get; set; }

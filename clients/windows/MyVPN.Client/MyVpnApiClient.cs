@@ -89,9 +89,6 @@ public sealed class MyVpnApiClient : IDisposable
     public Task DisconnectAsync(Guid deviceId, CancellationToken ct = default)
         => PostNoContentAsync($"api/devices/{deviceId}/disconnect", new { }, ct);
 
-    public Task<DeviceConnectionEventsResponse> GetConnectionEventsAsync(Guid deviceId, int take = 20, CancellationToken ct = default)
-        => GetAsync<DeviceConnectionEventsResponse>($"api/devices/{deviceId}/connections?take={take}", ct);
-
     /// <summary>
     /// Builds a wg-quick config by inserting the local private key into the API template.
     /// </summary>
@@ -198,10 +195,3 @@ public sealed record DeviceVpnConfigurationResponse(
     string Dns,
     WireGuardPeerDto Peer,
     string WireGuardQuickConfig);
-public sealed record DeviceConnectionEventResponse(
-    Guid Id,
-    Guid? ServerId,
-    string EventType,
-    string? VpnAddress,
-    DateTimeOffset CreatedAt);
-public sealed record DeviceConnectionEventsResponse(IReadOnlyList<DeviceConnectionEventResponse> Events);

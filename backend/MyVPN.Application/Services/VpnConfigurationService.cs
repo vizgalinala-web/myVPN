@@ -5,7 +5,6 @@ using MyVPN.Application.Common;
 using MyVPN.Application.DTOs;
 using MyVPN.Application.Options;
 using MyVPN.Domain.Entities;
-using MyVPN.Domain.Enums;
 using System.Text;
 
 namespace MyVPN.Application.Services;
@@ -15,7 +14,6 @@ public sealed class VpnConfigurationService
     private readonly IDeviceRepository _devices;
     private readonly IUserRepository _users;
     private readonly IVpnServerRepository _servers;
-    private readonly IDeviceConnectionEventRepository _connectionEvents;
     private readonly IVpnIpAllocator _ipAllocator;
     private readonly IWireGuardPeerProvisioner _provisioner;
     private readonly IClock _clock;
@@ -26,7 +24,6 @@ public sealed class VpnConfigurationService
         IDeviceRepository devices,
         IUserRepository users,
         IVpnServerRepository servers,
-        IDeviceConnectionEventRepository connectionEvents,
         IVpnIpAllocator ipAllocator,
         IWireGuardPeerProvisioner provisioner,
         IClock clock,
@@ -36,7 +33,6 @@ public sealed class VpnConfigurationService
         _devices = devices;
         _users = users;
         _servers = servers;
-        _connectionEvents = connectionEvents;
         _ipAllocator = ipAllocator;
         _provisioner = provisioner;
         _clock = clock;
@@ -71,7 +67,6 @@ public sealed class VpnConfigurationService
         if (string.IsNullOrWhiteSpace(device.VpnAddress) || !AddressBelongsToNetwork(device.VpnAddress, server.VpnNetwork))
         {
             var used = await _devices.ListAssignedVpnAddressesAsync(cancellationToken);
-            // Keep the current device address out of the "used" set when reallocating after server switch.
             used = used.Where(a => !string.Equals(NormalizeIp(a), NormalizeIp(device.VpnAddress), StringComparison.Ordinal)).ToList();
             device.VpnAddress = _ipAllocator.Allocate(server.VpnNetwork, used, _options.ReservedServerHostOffset);
         }
@@ -80,16 +75,6 @@ public sealed class VpnConfigurationService
         device.LastConnectedServerId = server.Id;
         device.ConnectedAt = _clock.UtcNow;
         await _provisioner.AddOrUpdatePeerAsync(server, device, cancellationToken);
-        await _connectionEvents.AddAsync(new DeviceConnectionEvent
-        {
-            Id = Guid.NewGuid(),
-            DeviceId = device.Id,
-            UserId = userId,
-            ServerId = server.Id,
-            EventType = DeviceConnectionEventType.Connected,
-            VpnAddress = device.VpnAddress,
-            CreatedAt = _clock.UtcNow
-        }, cancellationToken);
         await _devices.SaveChangesAsync(cancellationToken);
 
         var peer = new WireGuardPeerDto(
@@ -135,28 +120,10 @@ public sealed class VpnConfigurationService
             throw new AppException(ErrorCodes.NotFound, "Not found", "Device not found.", 404);
         }
 
-        // Idempotent: already disconnected still succeeds.
-        var wasConnected = device.IsConnected;
-        var previousServerId = device.LastConnectedServerId;
-        var previousAddress = device.VpnAddress;
         await _provisioner.RemovePeerAsync(device.PublicKey, cancellationToken);
         device.ConnectedAt = null;
         device.LastConnectedServerId = null;
         device.LastSeenAt = _clock.UtcNow;
-        if (wasConnected)
-        {
-            await _connectionEvents.AddAsync(new DeviceConnectionEvent
-            {
-                Id = Guid.NewGuid(),
-                DeviceId = device.Id,
-                UserId = userId,
-                ServerId = previousServerId,
-                EventType = DeviceConnectionEventType.Disconnected,
-                VpnAddress = previousAddress,
-                CreatedAt = _clock.UtcNow
-            }, cancellationToken);
-        }
-
         await _devices.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Device disconnected. UserId={UserId} DeviceId={DeviceId}", userId, deviceId);

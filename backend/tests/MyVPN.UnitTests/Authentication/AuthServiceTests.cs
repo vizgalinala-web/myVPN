@@ -82,7 +82,7 @@ public sealed class AuthServiceTests
         var auth = TestHelpers.CreateAuthService(db);
         await auth.RegisterAsync(new RegisterRequest("login@example.com", TestHelpers.ValidPassword));
 
-        var tokens = await auth.LoginAsync(new LoginRequest("login@example.com", TestHelpers.ValidPassword), "127.0.0.1");
+        var tokens = await auth.LoginAsync(new LoginRequest("login@example.com", TestHelpers.ValidPassword));
 
         tokens.AccessToken.Should().NotBeNullOrWhiteSpace();
         tokens.RefreshToken.Should().NotBeNullOrWhiteSpace();
@@ -99,7 +99,7 @@ public sealed class AuthServiceTests
         var auth = TestHelpers.CreateAuthService(db);
         await auth.RegisterAsync(new RegisterRequest("login@example.com", TestHelpers.ValidPassword));
 
-        var act = () => auth.LoginAsync(new LoginRequest("login@example.com", "WrongPassword!!!"), null);
+        var act = () => auth.LoginAsync(new LoginRequest("login@example.com", "WrongPassword!!!"));
         var ex = await act.Should().ThrowAsync<AppException>();
         ex.Which.Code.Should().Be(ErrorCodes.InvalidCredentials);
         ex.Which.Message.Should().Be("Invalid email or password.");
@@ -111,7 +111,7 @@ public sealed class AuthServiceTests
         await using var db = TestHelpers.CreateDb();
         var auth = TestHelpers.CreateAuthService(db);
 
-        var act = () => auth.LoginAsync(new LoginRequest("missing@example.com", TestHelpers.ValidPassword), null);
+        var act = () => auth.LoginAsync(new LoginRequest("missing@example.com", TestHelpers.ValidPassword));
         var ex = await act.Should().ThrowAsync<AppException>();
         ex.Which.Code.Should().Be(ErrorCodes.InvalidCredentials);
         ex.Which.Message.Should().Be("Invalid email or password.");
@@ -123,9 +123,9 @@ public sealed class AuthServiceTests
         await using var db = TestHelpers.CreateDb();
         var auth = TestHelpers.CreateAuthService(db);
         await auth.RegisterAsync(new RegisterRequest("r@example.com", TestHelpers.ValidPassword));
-        var first = await auth.LoginAsync(new LoginRequest("r@example.com", TestHelpers.ValidPassword), "1.1.1.1");
+        var first = await auth.LoginAsync(new LoginRequest("r@example.com", TestHelpers.ValidPassword));
 
-        var second = await auth.RefreshAsync(new RefreshRequest(first.RefreshToken), "1.1.1.1");
+        var second = await auth.RefreshAsync(new RefreshRequest(first.RefreshToken));
 
         second.RefreshToken.Should().NotBe(first.RefreshToken);
         var old = db.RefreshTokens.OrderBy(t => t.CreatedAt).First();
@@ -140,10 +140,10 @@ public sealed class AuthServiceTests
         var clock = new TestClock();
         var auth = TestHelpers.CreateAuthService(db, clock);
         await auth.RegisterAsync(new RegisterRequest("e@example.com", TestHelpers.ValidPassword));
-        var tokens = await auth.LoginAsync(new LoginRequest("e@example.com", TestHelpers.ValidPassword), null);
+        var tokens = await auth.LoginAsync(new LoginRequest("e@example.com", TestHelpers.ValidPassword));
 
         clock.UtcNow = clock.UtcNow.AddDays(40);
-        var act = () => auth.RefreshAsync(new RefreshRequest(tokens.RefreshToken), null);
+        var act = () => auth.RefreshAsync(new RefreshRequest(tokens.RefreshToken));
         (await act.Should().ThrowAsync<AppException>()).Which.Code.Should().Be(ErrorCodes.InvalidRefreshToken);
     }
 
@@ -153,15 +153,15 @@ public sealed class AuthServiceTests
         await using var db = TestHelpers.CreateDb();
         var auth = TestHelpers.CreateAuthService(db);
         await auth.RegisterAsync(new RegisterRequest("reuse@example.com", TestHelpers.ValidPassword));
-        var first = await auth.LoginAsync(new LoginRequest("reuse@example.com", TestHelpers.ValidPassword), null);
-        var second = await auth.RefreshAsync(new RefreshRequest(first.RefreshToken), null);
+        var first = await auth.LoginAsync(new LoginRequest("reuse@example.com", TestHelpers.ValidPassword));
+        var second = await auth.RefreshAsync(new RefreshRequest(first.RefreshToken));
 
-        var act = () => auth.RefreshAsync(new RefreshRequest(first.RefreshToken), null);
+        var act = () => auth.RefreshAsync(new RefreshRequest(first.RefreshToken));
         (await act.Should().ThrowAsync<AppException>()).Which.Code.Should().Be(ErrorCodes.RefreshTokenReused);
 
         db.RefreshTokens.All(t => t.RevokedAt != null).Should().BeTrue();
 
-        var act2 = () => auth.RefreshAsync(new RefreshRequest(second.RefreshToken), null);
+        var act2 = () => auth.RefreshAsync(new RefreshRequest(second.RefreshToken));
         await act2.Should().ThrowAsync<AppException>();
     }
 
@@ -171,10 +171,10 @@ public sealed class AuthServiceTests
         await using var db = TestHelpers.CreateDb();
         var auth = TestHelpers.CreateAuthService(db);
         await auth.RegisterAsync(new RegisterRequest("out@example.com", TestHelpers.ValidPassword));
-        var tokens = await auth.LoginAsync(new LoginRequest("out@example.com", TestHelpers.ValidPassword), null);
+        var tokens = await auth.LoginAsync(new LoginRequest("out@example.com", TestHelpers.ValidPassword));
 
-        await auth.LogoutAsync(new LogoutRequest(tokens.RefreshToken), null);
-        await auth.LogoutAsync(new LogoutRequest(tokens.RefreshToken), null);
+        await auth.LogoutAsync(new LogoutRequest(tokens.RefreshToken));
+        await auth.LogoutAsync(new LogoutRequest(tokens.RefreshToken));
 
         db.RefreshTokens.Single().RevokedAt.Should().NotBeNull();
     }
@@ -188,7 +188,7 @@ public sealed class AuthServiceTests
         db.Users.Single().IsActive = false;
         await db.SaveChangesAsync();
 
-        var act = () => auth.LoginAsync(new LoginRequest("blocked@example.com", TestHelpers.ValidPassword), null);
+        var act = () => auth.LoginAsync(new LoginRequest("blocked@example.com", TestHelpers.ValidPassword));
         (await act.Should().ThrowAsync<AppException>()).Which.Code.Should().Be(ErrorCodes.UserInactive);
     }
 
@@ -198,7 +198,7 @@ public sealed class AuthServiceTests
         await using var db = TestHelpers.CreateDb();
         var auth = TestHelpers.CreateAuthService(db);
         await auth.RegisterAsync(new RegisterRequest("jwt@example.com", TestHelpers.ValidPassword));
-        var tokens = await auth.LoginAsync(new LoginRequest("jwt@example.com", TestHelpers.ValidPassword), null);
+        var tokens = await auth.LoginAsync(new LoginRequest("jwt@example.com", TestHelpers.ValidPassword));
 
         var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(tokens.AccessToken);
