@@ -163,7 +163,7 @@ dotnet test backend/MyVPN.sln
 ```
 
 - Unit tests: in-memory EF + application services
-- Integration tests: **Testcontainers PostgreSQL** (requires Docker). If Docker is unavailable, skippable facts are skipped.
+- Integration tests: **Testcontainers PostgreSQL** (requires a working Docker engine that can start containers). If Docker/Testcontainers is unavailable, skippable facts are skipped — use a local PostgreSQL test database instead.
 
 ## Phase 2 limitations
 
