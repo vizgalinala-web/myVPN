@@ -25,6 +25,9 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- devices \
 
 For File peer provisioning with Docker Compose, set `Vpn__PeerProvisioner=File` and sync `./peer-state` via `tools/wg-peer-sync`.
 
+Tunnel import steps for WireGuard apps: [docs/clients-tunnel.md](../docs/clients-tunnel.md).
+VPN node apply/systemd: [docs/ops.md](../docs/ops.md).
+
 ## iOS (Swift Package)
 
 ```text

@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 6**: Backend API through Phase 3, Windows/iOS client scaffolds, peer-sync with optional safe `wg` apply, and GitHub Actions CI.
+Privacy-focused VPN product. This repository currently delivers **Phase 7**: Backend API, client scaffolds, safe peer-sync apply, GitHub Actions CI, and VPN-node ops packaging notes.
 
 ## Current stack
 
@@ -20,7 +20,8 @@ backend/
 ├── MyVPN.Infrastructure/
 └── tests/
 clients/                    # Windows CLI/SDK + iOS Swift API package
-tools/wg-peer-sync/         # Dry-run peer-state → wg set helper
+tools/wg-peer-sync/         # Peer-state → wg set helper (dry-run or apply)
+deploy/systemd/             # Example node service unit
 docs/
 docker-compose.yml
 .env.example
@@ -126,8 +127,7 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 ## Out of scope (current)
 
 - Full iOS Network Extension / Windows Wintun tunnel bring-up
-- Production WireGuard node automation that executes `wg set`
-- Kill Switch / DNS leak protection
+- Kill Switch / DNS leak protection (see interim notes in [clients-tunnel.md](docs/clients-tunnel.md))
 - Payments, admin UI, traffic collection
 
 ## Documentation
@@ -135,5 +135,7 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 - [Architecture](docs/architecture.md)
 - [Backend guide](docs/backend.md)
 - [WireGuard provisioning](docs/wireguard.md)
+- [VPN node ops](docs/ops.md)
+- [Client tunnel import](docs/clients-tunnel.md)
 - [Clients](clients/README.md)
 - [Security](docs/security.md)
