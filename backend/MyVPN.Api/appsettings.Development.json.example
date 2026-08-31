@@ -1,0 +1,30 @@
+{
+  "ConnectionStrings": {
+    "Default": "Host=localhost;Port=5432;Database=myvpn;Username=myvpn;Password=REPLACE_WITH_LOCAL_DEV_PASSWORD"
+  },
+  "Jwt": {
+    "Issuer": "myvpn-api",
+    "Audience": "myvpn-clients",
+    "SigningKey": "REPLACE_WITH_LOCAL_DEV_SIGNING_KEY_32+",
+    "AccessTokenLifetimeMinutes": 15
+  },
+  "RefreshTokens": {
+    "LifetimeDays": 30,
+    "HashPepper": "REPLACE_WITH_LOCAL_DEV_REFRESH_PEPPER_32+"
+  },
+  "Cors": {
+    "AllowedOrigins": [ "http://localhost:3000" ]
+  },
+  "RateLimiting": {
+    "Register": { "PermitLimit": 5, "WindowSeconds": 60 },
+    "Login": { "PermitLimit": 10, "WindowSeconds": 60 },
+    "Refresh": { "PermitLimit": 20, "WindowSeconds": 60 },
+    "Logout": { "PermitLimit": 20, "WindowSeconds": 60 }
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information"
+    }
+  }
+}

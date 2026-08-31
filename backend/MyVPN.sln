@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.Domain", "MyVPN.Domain\MyVPN.Domain.csproj", "{67C05700-6760-4477-B612-3B43278C4BBF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.Application", "MyVPN.Application\MyVPN.Application.csproj", "{F5DDC341-0088-4602-BF4A-069C1E2F58A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.Infrastructure", "MyVPN.Infrastructure\MyVPN.Infrastructure.csproj", "{22D77D32-C0C5-4344-9962-8316928988A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.Api", "MyVPN.Api\MyVPN.Api.csproj", "{8E272001-9FF1-4DB0-A11F-B4E94B762B78}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{4F572AD3-33C3-4361-9170-BBD01B3017A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.UnitTests", "tests\MyVPN.UnitTests\MyVPN.UnitTests.csproj", "{44DF6517-682B-406B-AF55-18051912E4BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.IntegrationTests", "tests\MyVPN.IntegrationTests\MyVPN.IntegrationTests.csproj", "{E8DFE83E-77D9-4A17-A592-B870B88D9467}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{67C05700-6760-4477-B612-3B43278C4BBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67C05700-6760-4477-B612-3B43278C4BBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67C05700-6760-4477-B612-3B43278C4BBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67C05700-6760-4477-B612-3B43278C4BBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5DDC341-0088-4602-BF4A-069C1E2F58A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5DDC341-0088-4602-BF4A-069C1E2F58A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5DDC341-0088-4602-BF4A-069C1E2F58A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5DDC341-0088-4602-BF4A-069C1E2F58A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22D77D32-C0C5-4344-9962-8316928988A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22D77D32-C0C5-4344-9962-8316928988A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22D77D32-C0C5-4344-9962-8316928988A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22D77D32-C0C5-4344-9962-8316928988A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E272001-9FF1-4DB0-A11F-B4E94B762B78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E272001-9FF1-4DB0-A11F-B4E94B762B78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E272001-9FF1-4DB0-A11F-B4E94B762B78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E272001-9FF1-4DB0-A11F-B4E94B762B78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44DF6517-682B-406B-AF55-18051912E4BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44DF6517-682B-406B-AF55-18051912E4BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44DF6517-682B-406B-AF55-18051912E4BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44DF6517-682B-406B-AF55-18051912E4BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8DFE83E-77D9-4A17-A592-B870B88D9467}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8DFE83E-77D9-4A17-A592-B870B88D9467}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8DFE83E-77D9-4A17-A592-B870B88D9467}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8DFE83E-77D9-4A17-A592-B870B88D9467}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{44DF6517-682B-406B-AF55-18051912E4BC} = {4F572AD3-33C3-4361-9170-BBD01B3017A8}
+		{E8DFE83E-77D9-4A17-A592-B870B88D9467} = {4F572AD3-33C3-4361-9170-BBD01B3017A8}
+	EndGlobalSection
+EndGlobal
