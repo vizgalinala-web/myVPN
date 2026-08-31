@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using WgPeerSync;
 
 if (args.Length == 0 || args[0] is "-h" or "--help")
 {
@@ -40,18 +41,29 @@ if (!Directory.Exists(dir))
     return 1;
 }
 
-cachePath ??= Path.Combine(dir, ".wg-peer-sync.cache.json");
-
-if (apply && Environment.GetEnvironmentVariable("MYVPN_WG_SYNC_ALLOW_APPLY") != "1")
+if (!PeerSyncPlanner.IsSafeInterfaceName(iface))
 {
-    Console.Error.WriteLine("Refusing --apply. Set MYVPN_WG_SYNC_ALLOW_APPLY=1 to enable (dangerous).");
-    return 2;
+    Console.Error.WriteLine($"Unsafe interface name: {iface}");
+    return 1;
 }
 
+cachePath ??= Path.Combine(dir, ".wg-peer-sync.cache.json");
+
+IWgCommandExecutor executor;
 if (apply)
 {
-    Console.Error.WriteLine("# --apply execution is not implemented. Pipe dry-run output to a secure operator script.");
-    return 3;
+    if (Environment.GetEnvironmentVariable("MYVPN_WG_SYNC_ALLOW_APPLY") != "1")
+    {
+        Console.Error.WriteLine("Refusing --apply. Set MYVPN_WG_SYNC_ALLOW_APPLY=1 to enable (dangerous).");
+        return 2;
+    }
+
+    executor = new ProcessWgCommandExecutor();
+    Console.Error.WriteLine("# APPLY MODE: executing wg via Process (no shell)");
+}
+else
+{
+    executor = new PrintingWgCommandExecutor();
 }
 
 using var cts = new CancellationTokenSource();
@@ -63,7 +75,7 @@ Console.CancelKeyPress += (_, e) =>
 
 if (!watch)
 {
-    return await SyncOnceAsync(dir, iface, cachePath, cts.Token);
+    return await SyncOnceAsync(dir, iface, cachePath, executor, cts.Token);
 }
 
 Console.Error.WriteLine($"# watching {dir} (Ctrl+C to stop)");
@@ -77,13 +89,11 @@ async Task TriggerAsync()
 
     try
     {
-        // Debounce bursts of file events.
         await Task.Delay(250, cts.Token);
-        await SyncOnceAsync(dir, iface, cachePath, cts.Token);
+        await SyncOnceAsync(dir, iface, cachePath, executor, cts.Token);
     }
     catch (OperationCanceledException)
     {
-        // shutting down
     }
     finally
     {
@@ -91,7 +101,7 @@ async Task TriggerAsync()
     }
 }
 
-await SyncOnceAsync(dir, iface, cachePath, cts.Token);
+await SyncOnceAsync(dir, iface, cachePath, executor, cts.Token);
 
 using var watcher = new FileSystemWatcher(dir)
 {
@@ -115,25 +125,42 @@ catch (OperationCanceledException)
 
 return 0;
 
-static async Task<int> SyncOnceAsync(string dir, string iface, string cachePath, CancellationToken ct)
+static async Task<int> SyncOnceAsync(
+    string dir,
+    string iface,
+    string cachePath,
+    IWgCommandExecutor executor,
+    CancellationToken ct)
 {
     var desired = await ReadDesiredPeersAsync(dir, ct);
     var previous = await LoadCacheAsync(cachePath, ct);
-
-    foreach (var peer in desired.Values.OrderBy(p => p.PublicKey, StringComparer.Ordinal))
+    IReadOnlyList<WgCommand> commands;
+    try
     {
-        var allowed = string.IsNullOrWhiteSpace(peer.AllowedIps) ? "0.0.0.0/32" : peer.AllowedIps!;
-        Console.WriteLine($"wg set {iface} peer {peer.PublicKey} allowed-ips {allowed}");
+        commands = PeerSyncPlanner.Plan(iface, desired, previous);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.Error.WriteLine($"# plan error: {ex.Message}");
+        return 1;
     }
 
-    foreach (var stale in previous.Except(desired.Keys, StringComparer.Ordinal).OrderBy(k => k, StringComparer.Ordinal))
+    foreach (var command in commands)
     {
-        Console.WriteLine($"wg set {iface} peer {stale} remove");
+        try
+        {
+            await executor.ExecuteAsync(command, ct);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"# apply failed: {ex.Message}");
+            return 4;
+        }
     }
 
     await SaveCacheAsync(cachePath, desired.Keys.ToHashSet(StringComparer.Ordinal), ct);
     var removed = previous.Count(k => !desired.ContainsKey(k));
-    Console.Error.WriteLine($"# sync desired={desired.Count} removed={removed} cache={cachePath}");
+    Console.Error.WriteLine($"# sync desired={desired.Count} removed={removed} commands={commands.Count} cache={cachePath}");
     return 0;
 }
 
@@ -156,6 +183,12 @@ static async Task<Dictionary<string, PeerState>> ReadDesiredPeersAsync(string di
             if (string.IsNullOrWhiteSpace(publicKey))
             {
                 Console.Error.WriteLine($"# skip {file}: missing publicKey");
+                continue;
+            }
+
+            if (!PeerSyncPlanner.IsValidPublicKey(publicKey))
+            {
+                Console.Error.WriteLine($"# skip {file}: invalid publicKey");
                 continue;
             }
 
@@ -193,10 +226,10 @@ static async Task<HashSet<string>> LoadCacheAsync(string path, CancellationToken
 
 static async Task SaveCacheAsync(string path, HashSet<string> keys, CancellationToken ct)
 {
-    var dir = Path.GetDirectoryName(path);
-    if (!string.IsNullOrEmpty(dir))
+    var directory = Path.GetDirectoryName(path);
+    if (!string.IsNullOrEmpty(directory))
     {
-        Directory.CreateDirectory(dir);
+        Directory.CreateDirectory(directory);
     }
 
     var tmp = path + ".tmp";
@@ -207,7 +240,7 @@ static async Task SaveCacheAsync(string path, HashSet<string> keys, Cancellation
 static void PrintHelp()
 {
     Console.WriteLine("""
-wg-peer-sync — reads MyVPN peer-state JSON and emits wg commands (Phase 5 helper)
+wg-peer-sync — reads MyVPN peer-state JSON and syncs WireGuard peers (Phase 6)
 
 Usage:
   wg-peer-sync <peer-state-dir> [--interface wg0] [--cache <path>] [--watch] [--apply]
@@ -217,10 +250,7 @@ file so deleted peer JSON files emit `wg set ... remove`.
 
   --watch   re-run on directory changes until Ctrl+C
   --cache   override cache path (default: <dir>/.wg-peer-sync.cache.json)
-  --apply   refused unless MYVPN_WG_SYNC_ALLOW_APPLY=1 (still not executed)
-
-Does not call wg(8) directly in this scaffold.
+  --apply   execute wg via Process (no shell). Requires MYVPN_WG_SYNC_ALLOW_APPLY=1
+            Optional MYVPN_WG_BIN overrides the wg binary path.
 """);
 }
-
-internal sealed record PeerState(string PublicKey, string? AllowedIps);

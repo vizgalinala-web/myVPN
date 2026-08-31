@@ -34,5 +34,7 @@ jobs:
         run: dotnet build clients/windows/MyVPN.Clients.sln -c Release --no-restore
       - name: Test
         run: dotnet test clients/windows/MyVPN.Clients.sln -c Release --no-build --verbosity normal
-      - name: Build wg-peer-sync
-        run: dotnet build tools/wg-peer-sync/wg-peer-sync.csproj -c Release
+      - name: Build / test wg-peer-sync
+        run: |
+          dotnet restore tools/WgPeerSync.sln
+          dotnet test tools/WgPeerSync.sln -c Release --verbosity normal
