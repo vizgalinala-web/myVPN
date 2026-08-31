@@ -65,14 +65,22 @@ Requires Bearer access token. Ownership is enforced in `VpnConfigurationService`
 | `Vpn__PersistentKeepaliveSeconds` | `25` | NAT keepalive |
 | `Vpn__ReservedServerHostOffset` | `1` | Host reserved for WG server |
 | `Vpn__MaxDevicesPerUser` | `5` | Max registered devices per account |
+| `Vpn__PeerProvisioner` | `InMemory` | `InMemory` or `File` |
+| `Vpn__PeerStateDirectory` | `peer-state` | Peer JSON dir for File mode |
 
 Rate limits (configurable): `DeviceConfiguration` and `DeviceDisconnect` (default 30/min per user id).
+
+Background job `RefreshTokenCleanup` deletes expired/revoked refresh tokens.
 
 ## Connection history
 
 `GET /api/devices/{id}/connections?take=20` returns recent Connected/Disconnected events for an owned device.
 
-`InMemoryWireGuardPeerProvisioner` records peers in process memory and logs upserts/removals. Replace this implementation with an SSH/`wg set` / controller API adapter later — application code depends only on `IWireGuardPeerProvisioner`.
+## Peer provisioner
+
+`InMemoryWireGuardPeerProvisioner` records peers in process memory and logs upserts/removals.
+
+`FileSystemWireGuardPeerProvisioner` (when `Vpn__PeerProvisioner=File`) writes peer desired-state JSON for an external sync agent. It does **not** call `wg` directly. Application code depends only on `IWireGuardPeerProvisioner`.
 
 Device deletion removes the peer (by public key) before the DB row is deleted.
 

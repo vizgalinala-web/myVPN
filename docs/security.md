@@ -39,7 +39,7 @@ Application rate limits reduce credential stuffing noise. They are **not** a sub
 - [ ] Account recovery flows
 - [ ] Email verification
 - [ ] Password reset
-- [ ] Refresh token cleanup job (expired/revoked rows)
+- [ ] Refresh token cleanup job (expired/revoked rows) — **implemented** (`RefreshTokenCleanup` hosted service)
 - [ ] Administrative access control for server management
 - [ ] Access-token denylist or short-lived tokens + introspection (if required)
 - [ ] WireGuard key lifecycle and server private-key storage outside DB

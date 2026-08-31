@@ -61,4 +61,20 @@ public sealed class VpnOptions
 
     /// <summary>Maximum active devices a single user may register.</summary>
     public int MaxDevicesPerUser { get; set; } = 5;
+
+    /// <summary>InMemory or File. File writes peer JSON for an external wg sync agent.</summary>
+    public string PeerProvisioner { get; set; } = "InMemory";
+
+    /// <summary>Directory used when PeerProvisioner=File.</summary>
+    public string PeerStateDirectory { get; set; } = "peer-state";
+}
+
+public sealed class RefreshTokenCleanupOptions
+{
+    public const string SectionName = "RefreshTokenCleanup";
+
+    public bool Enabled { get; set; } = true;
+    public int IntervalHours { get; set; } = 24;
+    /// <summary>Delete expired/revoked tokens older than this many days.</summary>
+    public int RetentionDays { get; set; } = 7;
 }

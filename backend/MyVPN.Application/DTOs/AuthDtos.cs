@@ -16,6 +16,8 @@ public sealed record RefreshRequest(string RefreshToken);
 
 public sealed record LogoutRequest(string RefreshToken);
 
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
 public sealed record CurrentUserResponse(Guid Id, string Email, DateTimeOffset CreatedAt);
 
 public sealed record VpnServerDto(

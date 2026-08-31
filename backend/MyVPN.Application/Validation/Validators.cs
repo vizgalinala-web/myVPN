@@ -90,6 +90,26 @@ public sealed class LogoutRequestValidator : AbstractValidator<LogoutRequest>
     }
 }
 
+public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequest>
+{
+    private static readonly Regex ControlChars = new(@"[\p{C}]", RegexOptions.Compiled);
+
+    public ChangePasswordRequestValidator()
+    {
+        RuleFor(x => x.CurrentPassword).NotEmpty().MaximumLength(PasswordPolicy.MaxLength);
+        RuleFor(x => x.NewPassword)
+            .NotEmpty()
+            .MinimumLength(PasswordPolicy.MinLength)
+            .MaximumLength(PasswordPolicy.MaxLength)
+            .Must(p => !PasswordPolicy.IsTooCommon(p))
+            .WithMessage("Password is too common or weak.")
+            .Must(p => !ControlChars.IsMatch(p))
+            .WithMessage("Password must not contain control characters.")
+            .Must((req, neu) => neu != req.CurrentPassword)
+            .WithMessage("New password must be different from the current password.");
+    }
+}
+
 public sealed class CreateDeviceRequestValidator : AbstractValidator<CreateDeviceRequest>
 {
     private static readonly Regex ControlChars = new(@"[\p{C}]", RegexOptions.Compiled);
