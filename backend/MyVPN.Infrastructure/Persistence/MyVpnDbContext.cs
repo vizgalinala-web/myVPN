@@ -13,6 +13,7 @@ public sealed class MyVpnDbContext : DbContext
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<VpnServer> VpnServers => Set<VpnServer>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<DeviceConnectionEvent> DeviceConnectionEvents => Set<DeviceConnectionEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -64,8 +64,13 @@ Requires Bearer access token. Ownership is enforced in `VpnConfigurationService`
 | `Vpn__AllowedIps` | `0.0.0.0/0, ::/0` | Full-tunnel MVP |
 | `Vpn__PersistentKeepaliveSeconds` | `25` | NAT keepalive |
 | `Vpn__ReservedServerHostOffset` | `1` | Host reserved for WG server |
+| `Vpn__MaxDevicesPerUser` | `5` | Max registered devices per account |
 
-## Peer provisioner
+Rate limits (configurable): `DeviceConfiguration` and `DeviceDisconnect` (default 30/min per user id).
+
+## Connection history
+
+`GET /api/devices/{id}/connections?take=20` returns recent Connected/Disconnected events for an owned device.
 
 `InMemoryWireGuardPeerProvisioner` records peers in process memory and logs upserts/removals. Replace this implementation with an SSH/`wg set` / controller API adapter later — application code depends only on `IWireGuardPeerProvisioner`.
 

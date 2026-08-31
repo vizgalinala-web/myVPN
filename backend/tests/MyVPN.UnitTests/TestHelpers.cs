@@ -58,14 +58,21 @@ internal static class TestHelpers
     }
 
     public static DeviceService CreateDeviceService(MyVpnDbContext db, TestClock? clock = null)
+        => CreateDeviceServiceWithOptions(db, clock, Options.Create(new VpnOptions { MaxDevicesPerUser = 5 }));
+
+    public static DeviceService CreateDeviceServiceWithOptions(
+        MyVpnDbContext db,
+        TestClock? clock,
+        Microsoft.Extensions.Options.IOptions<VpnOptions> vpnOptions)
     {
         clock ??= new TestClock();
         var provisioner = new InMemoryWireGuardPeerProvisioner(NullLogger<InMemoryWireGuardPeerProvisioner>.Instance);
-        var vpnOptions = Options.Create(new VpnOptions());
+        var events = new DeviceConnectionEventRepository(db);
         var vpnConfiguration = new VpnConfigurationService(
             new DeviceRepository(db),
             new UserRepository(db),
             new VpnServerRepository(db),
+            events,
             new VpnIpAllocator(),
             provisioner,
             clock,
@@ -75,9 +82,11 @@ internal static class TestHelpers
         return new DeviceService(
             new DeviceRepository(db),
             new UserRepository(db),
+            events,
             new WireGuardPublicKeyValidator(),
             vpnConfiguration,
             clock,
+            vpnOptions,
             new CreateDeviceRequestValidator(),
             NullLogger<DeviceService>.Instance);
     }

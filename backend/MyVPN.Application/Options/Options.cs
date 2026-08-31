@@ -34,6 +34,8 @@ public sealed class RateLimitOptions
     public RateLimitPolicyOptions Login { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
     public RateLimitPolicyOptions Refresh { get; set; } = new() { PermitLimit = 20, WindowSeconds = 60 };
     public RateLimitPolicyOptions Logout { get; set; } = new() { PermitLimit = 20, WindowSeconds = 60 };
+    public RateLimitPolicyOptions DeviceConfiguration { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };
+    public RateLimitPolicyOptions DeviceDisconnect { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };
 }
 
 public sealed class RateLimitPolicyOptions
@@ -56,4 +58,7 @@ public sealed class VpnOptions
 
     /// <summary>Host offset reserved for the WireGuard server inside each VpnNetwork CIDR (typically .1).</summary>
     public int ReservedServerHostOffset { get; set; } = 1;
+
+    /// <summary>Maximum active devices a single user may register.</summary>
+    public int MaxDevicesPerUser { get; set; } = 5;
 }

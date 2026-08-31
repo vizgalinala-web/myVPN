@@ -116,6 +116,8 @@ Do **not** commit production secrets.
 | GET | `/api/me` | Bearer |
 | GET | `/api/servers` | Public (enabled only) |
 | GET | `/api/devices` | Bearer |
+| GET | `/api/devices/{id}` | Bearer |
+| GET | `/api/devices/{id}/connections` | Bearer |
 | POST | `/api/devices` | Bearer |
 | GET | `/api/devices/{id}/configuration?serverId=` | Bearer |
 | POST | `/api/devices/{id}/disconnect` | Bearer |

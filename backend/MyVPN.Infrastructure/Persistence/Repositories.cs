@@ -50,6 +50,9 @@ public sealed class DeviceRepository : IDeviceRepository
             .Select(d => d.VpnAddress!)
             .ToListAsync(cancellationToken);
 
+    public Task<int> CountByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        => _db.Devices.CountAsync(d => d.UserId == userId, cancellationToken);
+
     public async Task AddAsync(Device device, CancellationToken cancellationToken = default)
         => await _db.Devices.AddAsync(device, cancellationToken);
 
@@ -99,6 +102,31 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
             token.RevokedByIp = revokedByIp;
         }
     }
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        => _db.SaveChangesAsync(cancellationToken);
+}
+
+public sealed class DeviceConnectionEventRepository : IDeviceConnectionEventRepository
+{
+    private readonly MyVpnDbContext _db;
+
+    public DeviceConnectionEventRepository(MyVpnDbContext db) => _db = db;
+
+    public async Task AddAsync(DeviceConnectionEvent connectionEvent, CancellationToken cancellationToken = default)
+        => await _db.DeviceConnectionEvents.AddAsync(connectionEvent, cancellationToken);
+
+    public async Task<IReadOnlyList<DeviceConnectionEvent>> ListByDeviceForUserAsync(
+        Guid deviceId,
+        Guid userId,
+        int take,
+        CancellationToken cancellationToken = default)
+        => await _db.DeviceConnectionEvents.AsNoTracking()
+            .Where(e => e.DeviceId == deviceId && e.UserId == userId)
+            .OrderByDescending(e => e.CreatedAt)
+            .ThenByDescending(e => e.Id)
+            .Take(Math.Clamp(take, 1, 100))
+            .ToListAsync(cancellationToken);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => _db.SaveChangesAsync(cancellationToken);

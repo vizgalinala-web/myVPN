@@ -18,6 +18,7 @@ public interface IDeviceRepository
     Task<Device?> FindByIdForUserAsync(Guid deviceId, Guid userId, CancellationToken cancellationToken = default);
     Task<bool> PublicKeyExistsAsync(string publicKey, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListAssignedVpnAddressesAsync(CancellationToken cancellationToken = default);
+    Task<int> CountByUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task AddAsync(Device device, CancellationToken cancellationToken = default);
     void Remove(Device device);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
@@ -68,4 +69,15 @@ public interface IClock
 public interface ICurrentUser
 {
     Guid? UserId { get; }
+}
+
+public interface IDeviceConnectionEventRepository
+{
+    Task AddAsync(DeviceConnectionEvent connectionEvent, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DeviceConnectionEvent>> ListByDeviceForUserAsync(
+        Guid deviceId,
+        Guid userId,
+        int take,
+        CancellationToken cancellationToken = default);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -186,6 +186,30 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromSeconds(rateLimitOptions.Logout.WindowSeconds),
                 QueueLimit = 0
             }));
+
+    options.AddPolicy("device-configuration", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User?.FindFirst("sub")?.Value
+                ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.DeviceConfiguration.PermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.DeviceConfiguration.WindowSeconds),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("device-disconnect", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User?.FindFirst("sub")?.Value
+                ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.DeviceDisconnect.PermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.DeviceDisconnect.WindowSeconds),
+                QueueLimit = 0
+            }));
 });
 
 var corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>() ?? new CorsOptions();
