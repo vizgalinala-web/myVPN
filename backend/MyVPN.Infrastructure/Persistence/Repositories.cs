@@ -1,0 +1,96 @@
+using Microsoft.EntityFrameworkCore;
+using MyVPN.Application.Abstractions;
+using MyVPN.Domain.Entities;
+
+namespace MyVPN.Infrastructure.Persistence;
+
+public sealed class UserRepository : IUserRepository
+{
+    private readonly MyVpnDbContext _db;
+
+    public UserRepository(MyVpnDbContext db) => _db = db;
+
+    public Task<User?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+        => _db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
+
+    public Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        => _db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
+    public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+        => _db.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+        => await _db.Users.AddAsync(user, cancellationToken);
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        => _db.SaveChangesAsync(cancellationToken);
+}
+
+public sealed class DeviceRepository : IDeviceRepository
+{
+    private readonly MyVpnDbContext _db;
+
+    public DeviceRepository(MyVpnDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<Device>> ListByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        => await _db.Devices.AsNoTracking()
+            .Where(d => d.UserId == userId)
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+    public Task<Device?> FindByIdForUserAsync(Guid deviceId, Guid userId, CancellationToken cancellationToken = default)
+        => _db.Devices.FirstOrDefaultAsync(d => d.Id == deviceId && d.UserId == userId, cancellationToken);
+
+    public Task<bool> PublicKeyExistsAsync(string publicKey, CancellationToken cancellationToken = default)
+        => _db.Devices.AnyAsync(d => d.PublicKey == publicKey, cancellationToken);
+
+    public async Task AddAsync(Device device, CancellationToken cancellationToken = default)
+        => await _db.Devices.AddAsync(device, cancellationToken);
+
+    public void Remove(Device device) => _db.Devices.Remove(device);
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        => _db.SaveChangesAsync(cancellationToken);
+}
+
+public sealed class VpnServerRepository : IVpnServerRepository
+{
+    private readonly MyVpnDbContext _db;
+
+    public VpnServerRepository(MyVpnDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<VpnServer>> ListEnabledAsync(CancellationToken cancellationToken = default)
+        => await _db.VpnServers.AsNoTracking()
+            .Where(s => s.Enabled)
+            .OrderBy(s => s.Country).ThenBy(s => s.Name)
+            .ToListAsync(cancellationToken);
+}
+
+public sealed class RefreshTokenRepository : IRefreshTokenRepository
+{
+    private readonly MyVpnDbContext _db;
+
+    public RefreshTokenRepository(MyVpnDbContext db) => _db = db;
+
+    public Task<RefreshToken?> FindByHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+        => _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
+
+    public async Task AddAsync(RefreshToken token, CancellationToken cancellationToken = default)
+        => await _db.RefreshTokens.AddAsync(token, cancellationToken);
+
+    public async Task RevokeFamilyAsync(Guid tokenFamilyId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default)
+    {
+        var tokens = await _db.RefreshTokens
+            .Where(t => t.TokenFamilyId == tokenFamilyId && t.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var token in tokens)
+        {
+            token.RevokedAt = revokedAt;
+            token.RevokedByIp = revokedByIp;
+        }
+    }
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        => _db.SaveChangesAsync(cancellationToken);
+}

@@ -1,0 +1,21 @@
+# Build
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+
+# Secrets / local env
+.env
+**/appsettings.*.local.json
+**/appsettings.Production.json
+
+# OS / tooling
+.DS_Store
+*.log
+TestResults/
+coverage/
+
+# Docker volumes leftovers
+pgdata/
