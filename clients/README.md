@@ -6,6 +6,7 @@ Solution: `clients/windows/MyVPN.Clients.sln`
 
 ```bash
 dotnet build clients/windows/MyVPN.Clients.sln
+dotnet test clients/windows/MyVPN.Clients.sln
 dotnet run --project clients/windows/MyVPN.Client.Cli -- keygen
 dotnet run --project clients/windows/MyVPN.Client.Cli -- login-config \
   --api http://localhost:5212/ \
@@ -15,6 +16,7 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- login-config \
 
 - `MyVPN.Client` — HTTP API SDK + local WireGuard keygen (NSec)
 - `MyVPN.Client.Cli` — register / fetch config helpers
+- `MyVPN.Client.Tests` — keygen + config builder unit tests
 - Private keys stay local; API only receives public keys
 - Tunnel / Kill Switch / Wintun not implemented yet
 
@@ -39,6 +41,7 @@ Next iOS steps (not in this repo yet):
 
 ```bash
 dotnet run --project tools/wg-peer-sync -- ./peer-state
+dotnet run --project tools/wg-peer-sync -- ./peer-state --watch
 ```
 
-Reads File provisioner JSON and prints `wg set ...` commands (dry-run). Does not apply changes unless explicitly enabled later.
+Reads File provisioner JSON and prints `wg set ...` / `remove` commands (dry-run). Uses a local cache to detect deleted peers. Does not execute `wg` unless a future apply path is enabled.
