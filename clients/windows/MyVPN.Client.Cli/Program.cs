@@ -17,7 +17,9 @@ try
         "servers" => await ServersAsync(args),
         "devices" => await DevicesAsync(args),
         "disconnect" => await DisconnectAsync(args),
+        "connections" => await ConnectionsAsync(args),
         "refresh" => await RefreshAsync(args),
+        "logout" => await LogoutAsync(args),
         _ => Fail($"Unknown command: {command}")
     };
 }
@@ -112,6 +114,21 @@ static async Task<int> DisconnectAsync(string[] args)
     return 0;
 }
 
+static async Task<int> ConnectionsAsync(string[] args)
+{
+    var deviceId = Guid.Parse(Require(args, "--device-id"));
+    var takeText = Get(args, "--take");
+    var take = takeText is null ? 20 : int.Parse(takeText);
+    using var client = await LoginClientAsync(args);
+    var events = await client.GetConnectionEventsAsync(deviceId, take);
+    foreach (var e in events.Events)
+    {
+        Console.WriteLine($"{e.CreatedAt:O}\t{e.EventType}\t{e.ServerId}\t{e.VpnAddress ?? "-"}");
+    }
+
+    return 0;
+}
+
 static async Task<int> RefreshAsync(string[] args)
 {
     var api = Require(args, "--api");
@@ -121,6 +138,16 @@ static async Task<int> RefreshAsync(string[] args)
     Console.WriteLine($"AccessToken={tokens.AccessToken}");
     Console.WriteLine($"RefreshToken={tokens.RefreshToken}");
     Console.WriteLine($"ExpiresIn={tokens.ExpiresIn}");
+    return 0;
+}
+
+static async Task<int> LogoutAsync(string[] args)
+{
+    var api = Require(args, "--api");
+    var refreshToken = Require(args, "--refresh-token");
+    using var client = new MyVpnApiClient(new Uri(api));
+    await client.LogoutAsync(refreshToken);
+    Console.WriteLine("Logged out.");
     return 0;
 }
 
@@ -168,7 +195,9 @@ Commands:
   servers --api <url>
   devices --api <url> --email <email> --password <password>
   disconnect --api <url> --email <email> --password <password> --device-id <guid>
+  connections --api <url> --email <email> --password <password> --device-id <guid> [--take 20]
   refresh --api <url> --refresh-token <token>
+  logout --api <url> --refresh-token <token>
 
 Notes:
   - Private keys are generated locally and never sent to the API.
