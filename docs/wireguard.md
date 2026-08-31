@@ -6,9 +6,11 @@ Phase 3 backend adds **client VPN configuration issuance** and **IP allocation**
 
 Still out of scope:
 
-- native iOS / Windows apps
-- real `wg` host sync on production VPN nodes (in-memory adapter for now)
+- full native tunnel bring-up (Wintun / Network Extension)
+- production `wg set` apply on VPN nodes (dry-run helper only — see `tools/wg-peer-sync`)
 - Kill Switch / DNS leak protection
+
+Phase 4 adds API client scaffolds under `clients/` and a dry-run peer sync helper under `tools/wg-peer-sync`.
 
 ## Endpoint
 

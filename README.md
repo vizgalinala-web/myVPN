@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 3**: Backend API, PostgreSQL, authentication, and WireGuard client configuration issuance.
+Privacy-focused VPN product. This repository currently delivers **Phase 4 scaffold**: Backend API through Phase 3 plus Windows/iOS API client starters.
 
 ## Current stack
 
@@ -19,7 +19,8 @@ backend/
 ├── MyVPN.Domain/
 ├── MyVPN.Infrastructure/
 └── tests/
-clients/                    # Phase 4+ native client notes
+clients/                    # Windows CLI/SDK + iOS Swift API package
+tools/wg-peer-sync/         # Dry-run peer-state → wg set helper
 docs/
 docker-compose.yml
 .env.example
@@ -124,8 +125,8 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 
 ## Out of scope (current)
 
-- iOS / Windows VPN clients
-- Production WireGuard node automation (`wg set` over SSH/API)
+- Full iOS Network Extension / Windows Wintun tunnel bring-up
+- Production WireGuard node automation that executes `wg set`
 - Kill Switch / DNS leak protection
 - Payments, admin UI, traffic collection
 
@@ -134,4 +135,5 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 - [Architecture](docs/architecture.md)
 - [Backend guide](docs/backend.md)
 - [WireGuard provisioning](docs/wireguard.md)
+- [Clients](clients/README.md)
 - [Security](docs/security.md)

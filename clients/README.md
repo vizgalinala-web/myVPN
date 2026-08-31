@@ -1,27 +1,44 @@
-# Native clients (Phase 4+)
+# Clients
 
-This folder will hold iOS and Windows VPN clients. Backend API through Phase 3 is ready for them.
+## Windows (.NET)
 
-## Planned apps
+Solution: `clients/windows/MyVPN.Clients.sln`
 
-| Client | Tech | Notes |
-|---|---|---|
-| iOS | Swift + Network Extension (Packet Tunnel) | WireGuard kit / NEPacketTunnelProvider |
-| Windows | C# / WinUI + Wintun/WireGuardNT | Use config from `/api/devices/{id}/configuration` |
+```bash
+dotnet build clients/windows/MyVPN.Clients.sln
+dotnet run --project clients/windows/MyVPN.Client.Cli -- keygen
+dotnet run --project clients/windows/MyVPN.Client.Cli -- login-config \
+  --api http://localhost:5212/ \
+  --email user@example.com \
+  --password 'CorrectHorseBatteryStaple!'
+```
 
-## Client responsibilities
+- `MyVPN.Client` — HTTP API SDK + local WireGuard keygen (NSec)
+- `MyVPN.Client.Cli` — register / fetch config helpers
+- Private keys stay local; API only receives public keys
+- Tunnel / Kill Switch / Wintun not implemented yet
 
-1. Generate WireGuard keypair locally — **never send private key to API**
-2. Register device: `POST /api/devices` with public key
-3. Fetch config: `GET /api/devices/{id}/configuration?serverId=...`
-4. Insert local private key into `[Interface]`
-5. Bring tunnel up; call `POST /api/devices/{id}/disconnect` on stop
-6. Implement Kill Switch / DNS leak protection on device OS APIs (not backend)
+## iOS (Swift Package)
 
-## Auth flow
+```text
+clients/ios/
+  Package.swift
+  Sources/MyVPNApi/
+```
 
-`register` → `login` → store refresh token securely (Keychain / Credential Locker) → refresh before access expiry.
+Swift Package with models + `MyVPNApiClient`. Requires Xcode/macOS to build.
 
-## Status
+Next iOS steps (not in this repo yet):
 
-Scaffold only — no native VPN UI or Network Extension code in this commit.
+1. App target + Packet Tunnel Network Extension
+2. Generate keys in Keychain
+3. Call API, assemble NETunnelProviderProtocol / WireGuard config
+4. Kill Switch via `includeAllNetworks` / route enforcement
+
+## wg-peer-sync tool
+
+```bash
+dotnet run --project tools/wg-peer-sync -- ./peer-state
+```
+
+Reads File provisioner JSON and prints `wg set ...` commands (dry-run). Does not apply changes unless explicitly enabled later.
