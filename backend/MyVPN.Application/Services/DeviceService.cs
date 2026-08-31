@@ -152,6 +152,9 @@ public sealed class DeviceService
         device.Platform.ToString(),
         device.PublicKey,
         device.VpnAddress,
+        device.LastConnectedServerId,
+        device.ConnectedAt,
+        device.IsConnected,
         device.CreatedAt,
         device.LastSeenAt,
         device.IsActive);

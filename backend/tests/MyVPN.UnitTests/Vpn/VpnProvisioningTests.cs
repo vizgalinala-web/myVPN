@@ -102,6 +102,29 @@ public sealed class VpnProvisioningTests
         (await act.Should().ThrowAsync<AppException>()).Which.Status.Should().Be(404);
     }
 
+    [Fact]
+    public async Task Disconnect_ClearsConnectionState_Idempotent()
+    {
+        await using var db = TestHelpers.CreateDb();
+        var clock = new TestClock();
+        var user = await SeedUserAsync(db);
+        var server = await SeedServerAsync(db, "10.8.0.0/24");
+        var device = await SeedDeviceAsync(db, user.Id, TestHelpers.ValidPublicKeyA);
+        var service = CreateConfigService(db, clock);
+
+        await service.GetConfigurationAsync(user.Id, device.Id, server.Id);
+        (await db.Devices.FindAsync(device.Id))!.IsConnected.Should().BeTrue();
+
+        await service.DisconnectAsync(user.Id, device.Id);
+        await service.DisconnectAsync(user.Id, device.Id);
+
+        var stored = await db.Devices.FindAsync(device.Id);
+        stored!.ConnectedAt.Should().BeNull();
+        stored.LastConnectedServerId.Should().BeNull();
+        stored.IsConnected.Should().BeFalse();
+        stored.VpnAddress.Should().Be("10.8.0.2/32");
+    }
+
     private static VpnConfigurationService CreateConfigService(MyVpnDbContext db, TestClock clock)
         => new(
             new DeviceRepository(db),

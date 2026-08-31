@@ -36,6 +36,9 @@ public sealed record DeviceResponse(
     string Platform,
     string PublicKey,
     string? VpnAddress,
+    Guid? LastConnectedServerId,
+    DateTimeOffset? ConnectedAt,
+    bool IsConnected,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastSeenAt,
     bool IsActive);

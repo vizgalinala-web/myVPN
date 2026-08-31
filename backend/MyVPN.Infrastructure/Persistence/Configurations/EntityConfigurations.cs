@@ -36,6 +36,11 @@ public sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
         builder.Property(x => x.IsActive).IsRequired();
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.PublicKey).IsUnique();
+        builder.HasIndex(x => x.LastConnectedServerId);
+        builder.HasOne<VpnServer>()
+            .WithMany()
+            .HasForeignKey(x => x.LastConnectedServerId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
