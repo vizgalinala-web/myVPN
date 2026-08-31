@@ -1,0 +1,25 @@
+[Unit]
+Description=MyVPN WireGuard peer-state sync
+Documentation=https://github.com/vizgalinala-web/myVPN/blob/main/docs/ops.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Prefer a dedicated user with CAP_NET_ADMIN in production.
+User=root
+WorkingDirectory=/opt/myvpn
+Environment=MYVPN_WG_SYNC_ALLOW_APPLY=1
+# Environment=MYVPN_WG_BIN=/usr/bin/wg
+ExecStart=/usr/bin/dotnet /opt/myvpn/tools/wg-peer-sync/wg-peer-sync.dll /var/lib/myvpn/peer-state --interface wg0 --watch --apply
+Restart=on-failure
+RestartSec=3
+# Harden a bit; adjust if your packaging paths differ.
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/myvpn/peer-state
+
+[Install]
+WantedBy=multi-user.target
