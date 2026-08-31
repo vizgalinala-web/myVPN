@@ -14,6 +14,10 @@ try
         "keygen" => Keygen(),
         "register" => await RegisterAsync(args),
         "login-config" => await LoginConfigAsync(args),
+        "servers" => await ServersAsync(args),
+        "devices" => await DevicesAsync(args),
+        "disconnect" => await DisconnectAsync(args),
+        "refresh" => await RefreshAsync(args),
         _ => Fail($"Unknown command: {command}")
     };
 }
@@ -73,6 +77,63 @@ static async Task<int> LoginConfigAsync(string[] args)
     return 0;
 }
 
+static async Task<int> ServersAsync(string[] args)
+{
+    var api = Require(args, "--api");
+    using var client = new MyVpnApiClient(new Uri(api));
+    var servers = await client.GetServersAsync();
+    foreach (var s in servers.Servers)
+    {
+        Console.WriteLine($"{s.Id}\t{s.Name}\t{s.Country}/{s.City}\t{s.Endpoint}");
+    }
+
+    return 0;
+}
+
+static async Task<int> DevicesAsync(string[] args)
+{
+    using var client = await LoginClientAsync(args);
+    var devices = await client.GetDevicesAsync();
+    foreach (var d in devices.Devices)
+    {
+        var state = d.IsConnected ? "connected" : "idle";
+        Console.WriteLine($"{d.Id}\t{d.Name}\t{d.Platform}\t{d.VpnAddress ?? "-"}\t{state}");
+    }
+
+    return 0;
+}
+
+static async Task<int> DisconnectAsync(string[] args)
+{
+    var deviceId = Guid.Parse(Require(args, "--device-id"));
+    using var client = await LoginClientAsync(args);
+    await client.DisconnectAsync(deviceId);
+    Console.WriteLine($"Disconnected {deviceId}");
+    return 0;
+}
+
+static async Task<int> RefreshAsync(string[] args)
+{
+    var api = Require(args, "--api");
+    var refreshToken = Require(args, "--refresh-token");
+    using var client = new MyVpnApiClient(new Uri(api));
+    var tokens = await client.RefreshAsync(refreshToken);
+    Console.WriteLine($"AccessToken={tokens.AccessToken}");
+    Console.WriteLine($"RefreshToken={tokens.RefreshToken}");
+    Console.WriteLine($"ExpiresIn={tokens.ExpiresIn}");
+    return 0;
+}
+
+static async Task<MyVpnApiClient> LoginClientAsync(string[] args)
+{
+    var api = Require(args, "--api");
+    var email = Require(args, "--email");
+    var password = Require(args, "--password");
+    var client = new MyVpnApiClient(new Uri(api));
+    await client.LoginAsync(email, password);
+    return client;
+}
+
 static string Require(string[] args, string name)
     => Get(args, name) ?? throw new ArgumentException($"Missing {name}");
 
@@ -98,12 +159,16 @@ static int Fail(string message)
 static void PrintHelp()
 {
     Console.WriteLine("""
-MyVPN Windows client CLI (Phase 4 scaffold)
+MyVPN Windows client CLI (Phase 5)
 
 Commands:
   keygen
   register --api <url> --email <email> --password <password>
   login-config --api <url> --email <email> --password <password> [--device-name <name>] [--server-id <guid>]
+  servers --api <url>
+  devices --api <url> --email <email> --password <password>
+  disconnect --api <url> --email <email> --password <password> --device-id <guid>
+  refresh --api <url> --refresh-token <token>
 
 Notes:
   - Private keys are generated locally and never sent to the API.
