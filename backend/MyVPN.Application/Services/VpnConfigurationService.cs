@@ -73,6 +73,8 @@ public sealed class VpnConfigurationService
         }
 
         device.LastSeenAt = _clock.UtcNow;
+        device.LastConnectedServerId = server.Id;
+        device.ConnectedAt = _clock.UtcNow;
         await _provisioner.AddOrUpdatePeerAsync(server, device, cancellationToken);
         await _devices.SaveChangesAsync(cancellationToken);
 
@@ -103,6 +105,30 @@ public sealed class VpnConfigurationService
     public async Task DeprovisionDeviceAsync(Device device, CancellationToken cancellationToken = default)
     {
         await _provisioner.RemovePeerAsync(device.PublicKey, cancellationToken);
+    }
+
+    public async Task DisconnectAsync(Guid userId, Guid deviceId, CancellationToken cancellationToken = default)
+    {
+        var user = await _users.FindByIdAsync(userId, cancellationToken);
+        if (user is null || !user.IsActive)
+        {
+            throw new AppException(ErrorCodes.Unauthorized, "Unauthorized", "Authentication is required.", 401);
+        }
+
+        var device = await _devices.FindByIdForUserAsync(deviceId, userId, cancellationToken);
+        if (device is null)
+        {
+            throw new AppException(ErrorCodes.NotFound, "Not found", "Device not found.", 404);
+        }
+
+        // Idempotent: already disconnected still succeeds.
+        await _provisioner.RemovePeerAsync(device.PublicKey, cancellationToken);
+        device.ConnectedAt = null;
+        device.LastConnectedServerId = null;
+        device.LastSeenAt = _clock.UtcNow;
+        await _devices.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Device disconnected. UserId={UserId} DeviceId={DeviceId}", userId, deviceId);
     }
 
     private static string BuildQuickConfig(string address, string dns, WireGuardPeerDto peer)

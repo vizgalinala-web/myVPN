@@ -16,13 +16,24 @@ Still out of scope:
 
 Requires Bearer access token. Ownership is enforced in `VpnConfigurationService`.
 
+### Disconnect
+
+`POST /api/devices/{id}/disconnect`
+
+- Bearer required
+- Idempotent **204**
+- Removes peer via provisioner
+- Clears `ConnectedAt` / `LastConnectedServerId`
+- Keeps allocated `VpnAddress` for reuse on next connect
+
 ### Behaviour
 
 1. Validate user + owned active device
 2. Load enabled VPN server by id (disabled/missing → 404)
 3. Allocate `VpnAddress` from `VpnServer.VpnNetwork` if missing or outside that network (`.1` reserved for server)
 4. Upsert peer via `IWireGuardPeerProvisioner`
-5. Return configuration **without** any private key
+5. Persist connection markers (`LastConnectedServerId`, `ConnectedAt`)
+6. Return configuration **without** any private key
 
 ### Response shape
 

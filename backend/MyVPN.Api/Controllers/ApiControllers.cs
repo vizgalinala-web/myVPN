@@ -172,6 +172,20 @@ public sealed class DevicesController : ControllerBase
         return Ok(config);
     }
 
+    /// <summary>
+    /// Marks the device disconnected and removes the in-memory/stub WireGuard peer.
+    /// Idempotent. Does not delete the device or revoke its VpnAddress allocation.
+    /// </summary>
+    [HttpPost("{id:guid}/disconnect")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Disconnect(Guid id, CancellationToken cancellationToken)
+    {
+        await _vpnConfiguration.DisconnectAsync(RequireUserId(), id, cancellationToken);
+        return NoContent();
+    }
+
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

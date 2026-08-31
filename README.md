@@ -118,6 +118,7 @@ Do **not** commit production secrets.
 | GET | `/api/devices` | Bearer |
 | POST | `/api/devices` | Bearer |
 | GET | `/api/devices/{id}/configuration?serverId=` | Bearer |
+| POST | `/api/devices/{id}/disconnect` | Bearer |
 | DELETE | `/api/devices/{id}` | Bearer |
 
 See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
