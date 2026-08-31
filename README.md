@@ -116,11 +116,10 @@ Do **not** commit production secrets.
 | GET | `/api/servers` | Public (enabled only) |
 | GET | `/api/devices` | Bearer |
 | GET | `/api/devices/{id}` | Bearer |
-| GET | `/api/devices/{id}/connections` | Bearer |
 | POST | `/api/devices` | Bearer |
+| DELETE | `/api/devices/{id}` | Bearer |
 | GET | `/api/devices/{id}/configuration?serverId=` | Bearer |
 | POST | `/api/devices/{id}/disconnect` | Bearer |
-| DELETE | `/api/devices/{id}` | Bearer |
 
 See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 
@@ -139,3 +138,4 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 - [Client tunnel import](docs/clients-tunnel.md)
 - [Clients](clients/README.md)
 - [Security](docs/security.md)
+- [Privacy testing checklist](docs/privacy-testing.md)

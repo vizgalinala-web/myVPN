@@ -173,6 +173,13 @@ dotnet test backend/MyVPN.sln
 - No email verification / password reset
 - No admin API for servers (seed/internal only)
 
+## Privacy / account lifecycle (TODO)
+
+- [ ] `DELETE /api/account` — delete user, devices, refresh tokens, and VPN peers (future phase)
+- [ ] Privacy policy + App Store privacy answers before public release
+
+See [privacy-testing.md](privacy-testing.md) and [security.md](security.md).
+
 ## Phase 3 — WireGuard configuration
 
 See [wireguard.md](wireguard.md).

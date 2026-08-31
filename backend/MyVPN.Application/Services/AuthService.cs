@@ -88,7 +88,7 @@ public sealed class AuthService
         return new RegisterResponse(user.Id, user.Email, user.CreatedAt);
     }
 
-    public async Task<TokenResponse> LoginAsync(LoginRequest request, string? clientIp, CancellationToken cancellationToken = default)
+    public async Task<TokenResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         await ValidateAsync(_loginValidator, request, cancellationToken);
 
@@ -115,10 +115,10 @@ public sealed class AuthService
                 StatusCodes.Forbidden);
         }
 
-        return await IssueTokensAsync(user, Guid.NewGuid(), clientIp, cancellationToken);
+        return await IssueTokensAsync(user, Guid.NewGuid(), cancellationToken);
     }
 
-    public async Task<TokenResponse> RefreshAsync(RefreshRequest request, string? clientIp, CancellationToken cancellationToken = default)
+    public async Task<TokenResponse> RefreshAsync(RefreshRequest request, CancellationToken cancellationToken = default)
     {
         await ValidateAsync(_refreshValidator, request, cancellationToken);
 
@@ -138,7 +138,7 @@ public sealed class AuthService
         if (existing.IsRevoked)
         {
             // Replay protection: revoke the entire token family.
-            await _refreshTokens.RevokeFamilyAsync(existing.TokenFamilyId, now, clientIp, cancellationToken);
+            await _refreshTokens.RevokeFamilyAsync(existing.TokenFamilyId, now, cancellationToken);
             await _refreshTokens.SaveChangesAsync(cancellationToken);
             _logger.LogWarning(
                 "Refresh token reuse detected. UserId={UserId} TokenFamilyId={TokenFamilyId}",
@@ -172,13 +172,12 @@ public sealed class AuthService
         }
 
         existing.RevokedAt = now;
-        existing.RevokedByIp = clientIp;
 
-        var response = await IssueTokensAsync(user, existing.TokenFamilyId, clientIp, cancellationToken, existing);
+        var response = await IssueTokensAsync(user, existing.TokenFamilyId, cancellationToken, existing);
         return response;
     }
 
-    public async Task LogoutAsync(LogoutRequest request, string? clientIp, CancellationToken cancellationToken = default)
+    public async Task LogoutAsync(LogoutRequest request, CancellationToken cancellationToken = default)
     {
         await ValidateAsync(_logoutValidator, request, cancellationToken);
 
@@ -189,7 +188,6 @@ public sealed class AuthService
         if (existing is not null && !existing.IsRevoked)
         {
             existing.RevokedAt = _clock.UtcNow;
-            existing.RevokedByIp = clientIp;
             await _refreshTokens.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Refresh token revoked on logout. UserId={UserId}", existing.UserId);
         }
@@ -198,7 +196,6 @@ public sealed class AuthService
     public async Task ChangePasswordAsync(
         Guid userId,
         ChangePasswordRequest request,
-        string? clientIp,
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(_changePasswordValidator, request, cancellationToken);
@@ -220,7 +217,7 @@ public sealed class AuthService
 
         user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
         user.UpdatedAt = _clock.UtcNow;
-        await _refreshTokens.RevokeAllForUserAsync(userId, _clock.UtcNow, clientIp, cancellationToken);
+        await _refreshTokens.RevokeAllForUserAsync(userId, _clock.UtcNow, cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Password changed and refresh tokens revoked. UserId={UserId}", userId);
@@ -229,7 +226,6 @@ public sealed class AuthService
     private async Task<TokenResponse> IssueTokensAsync(
         User user,
         Guid tokenFamilyId,
-        string? clientIp,
         CancellationToken cancellationToken,
         RefreshToken? replaced = null)
     {
@@ -244,8 +240,7 @@ public sealed class AuthService
             TokenFamilyId = tokenFamilyId,
             TokenHash = refreshHash,
             CreatedAt = now,
-            ExpiresAt = now.AddDays(_refreshOptions.LifetimeDays),
-            CreatedByIp = clientIp
+            ExpiresAt = now.AddDays(_refreshOptions.LifetimeDays)
         };
 
         if (replaced is not null)

@@ -18,23 +18,22 @@ public sealed class ChangePasswordAndCleanupTests
         await using var db = TestHelpers.CreateDb();
         var auth = TestHelpers.CreateAuthService(db);
         await auth.RegisterAsync(new RegisterRequest("pw@example.com", TestHelpers.ValidPassword));
-        var login = await auth.LoginAsync(new LoginRequest("pw@example.com", TestHelpers.ValidPassword), null);
+        var login = await auth.LoginAsync(new LoginRequest("pw@example.com", TestHelpers.ValidPassword));
         var userId = db.Users.Single().Id;
 
         await auth.ChangePasswordAsync(
             userId,
-            new ChangePasswordRequest(TestHelpers.ValidPassword, "AnotherStrongPassphrase!"),
-            "127.0.0.1");
+            new ChangePasswordRequest(TestHelpers.ValidPassword, "AnotherStrongPassphrase!"));
 
         db.RefreshTokens.All(t => t.RevokedAt != null).Should().BeTrue();
 
-        var actOld = () => auth.LoginAsync(new LoginRequest("pw@example.com", TestHelpers.ValidPassword), null);
+        var actOld = () => auth.LoginAsync(new LoginRequest("pw@example.com", TestHelpers.ValidPassword));
         await actOld.Should().ThrowAsync<AppException>();
 
-        var actRefresh = () => auth.RefreshAsync(new RefreshRequest(login.RefreshToken), null);
+        var actRefresh = () => auth.RefreshAsync(new RefreshRequest(login.RefreshToken));
         await actRefresh.Should().ThrowAsync<AppException>();
 
-        var neu = await auth.LoginAsync(new LoginRequest("pw@example.com", "AnotherStrongPassphrase!"), null);
+        var neu = await auth.LoginAsync(new LoginRequest("pw@example.com", "AnotherStrongPassphrase!"));
         neu.AccessToken.Should().NotBeNullOrWhiteSpace();
     }
 

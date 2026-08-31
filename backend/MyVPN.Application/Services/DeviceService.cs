@@ -14,7 +14,6 @@ public sealed class DeviceService
 {
     private readonly IDeviceRepository _devices;
     private readonly IUserRepository _users;
-    private readonly IDeviceConnectionEventRepository _connectionEvents;
     private readonly IWireGuardPublicKeyValidator _publicKeyValidator;
     private readonly VpnConfigurationService _vpnConfiguration;
     private readonly IClock _clock;
@@ -25,7 +24,6 @@ public sealed class DeviceService
     public DeviceService(
         IDeviceRepository devices,
         IUserRepository users,
-        IDeviceConnectionEventRepository connectionEvents,
         IWireGuardPublicKeyValidator publicKeyValidator,
         VpnConfigurationService vpnConfiguration,
         IClock clock,
@@ -35,7 +33,6 @@ public sealed class DeviceService
     {
         _devices = devices;
         _users = users;
-        _connectionEvents = connectionEvents;
         _publicKeyValidator = publicKeyValidator;
         _vpnConfiguration = vpnConfiguration;
         _clock = clock;
@@ -61,28 +58,6 @@ public sealed class DeviceService
         }
 
         return Map(device);
-    }
-
-    public async Task<DeviceConnectionEventsResponse> ListConnectionEventsAsync(
-        Guid userId,
-        Guid deviceId,
-        int take = 20,
-        CancellationToken cancellationToken = default)
-    {
-        await EnsureActiveUserAsync(userId, cancellationToken);
-        var device = await _devices.FindByIdForUserAsync(deviceId, userId, cancellationToken);
-        if (device is null)
-        {
-            throw new AppException(ErrorCodes.NotFound, "Not found", "Device not found.", 404);
-        }
-
-        var events = await _connectionEvents.ListByDeviceForUserAsync(deviceId, userId, take, cancellationToken);
-        return new DeviceConnectionEventsResponse(events.Select(e => new DeviceConnectionEventResponse(
-            e.Id,
-            e.ServerId,
-            e.EventType.ToString(),
-            e.VpnAddress,
-            e.CreatedAt)).ToList());
     }
 
     public async Task<DeviceResponse> CreateAsync(Guid userId, CreateDeviceRequest request, CancellationToken cancellationToken = default)
@@ -116,25 +91,6 @@ public sealed class DeviceService
 
         await EnsureActiveUserAsync(userId, cancellationToken);
 
-        var deviceCount = await _devices.CountByUserAsync(userId, cancellationToken);
-        if (deviceCount >= _vpnOptions.MaxDevicesPerUser)
-        {
-            throw new AppException(
-                ErrorCodes.Conflict,
-                "Device limit reached",
-                $"A maximum of {_vpnOptions.MaxDevicesPerUser} devices is allowed per account.",
-                409);
-        }
-
-        if (await _devices.PublicKeyExistsAsync(request.PublicKey, cancellationToken))
-        {
-            throw new AppException(
-                ErrorCodes.Conflict,
-                "Conflict",
-                "A device with this public key already exists.",
-                409);
-        }
-
         if (!Enum.TryParse<DevicePlatform>(request.Platform, ignoreCase: true, out var platform))
         {
             throw new AppException(
@@ -157,11 +113,32 @@ public sealed class DeviceService
             IsActive = true
         };
 
-        await _devices.AddAsync(device, cancellationToken);
-        await _devices.SaveChangesAsync(cancellationToken);
+        var result = await _devices.TryAddWithinUserLimitAsync(
+            userId,
+            _vpnOptions.MaxDevicesPerUser,
+            device,
+            cancellationToken);
 
-        _logger.LogInformation("Device created. UserId={UserId} DeviceId={DeviceId}", userId, device.Id);
-        return Map(device);
+        switch (result)
+        {
+            case DeviceCreateResult.LimitReached:
+                throw new AppException(
+                    ErrorCodes.DeviceLimitReached,
+                    "Device limit reached",
+                    $"A maximum of {_vpnOptions.MaxDevicesPerUser} devices is allowed per account.",
+                    409);
+            case DeviceCreateResult.DuplicatePublicKey:
+                throw new AppException(
+                    ErrorCodes.Conflict,
+                    "Conflict",
+                    "A device with this public key already exists.",
+                    409);
+            case DeviceCreateResult.Success:
+                _logger.LogInformation("Device created. UserId={UserId} DeviceId={DeviceId}", userId, device.Id);
+                return Map(device);
+            default:
+                throw new InvalidOperationException($"Unexpected device create result: {result}");
+        }
     }
 
     public async Task DeleteAsync(Guid userId, Guid deviceId, CancellationToken cancellationToken = default)

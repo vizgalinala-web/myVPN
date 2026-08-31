@@ -1,3 +1,4 @@
+using MyVPN.Application.Common;
 using MyVPN.Domain.Entities;
 using MyVPN.Domain.Enums;
 
@@ -19,6 +20,11 @@ public interface IDeviceRepository
     Task<bool> PublicKeyExistsAsync(string publicKey, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListAssignedVpnAddressesAsync(CancellationToken cancellationToken = default);
     Task<int> CountByUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<DeviceCreateResult> TryAddWithinUserLimitAsync(
+        Guid userId,
+        int maxDevices,
+        Device device,
+        CancellationToken cancellationToken = default);
     Task AddAsync(Device device, CancellationToken cancellationToken = default);
     void Remove(Device device);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
@@ -34,8 +40,8 @@ public interface IRefreshTokenRepository
 {
     Task<RefreshToken?> FindByHashAsync(string tokenHash, CancellationToken cancellationToken = default);
     Task AddAsync(RefreshToken token, CancellationToken cancellationToken = default);
-    Task RevokeFamilyAsync(Guid tokenFamilyId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default);
-    Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, string? revokedByIp, CancellationToken cancellationToken = default);
+    Task RevokeFamilyAsync(Guid tokenFamilyId, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
+    Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
     Task<int> DeleteExpiredOrRevokedAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
@@ -71,15 +77,4 @@ public interface IClock
 public interface ICurrentUser
 {
     Guid? UserId { get; }
-}
-
-public interface IDeviceConnectionEventRepository
-{
-    Task AddAsync(DeviceConnectionEvent connectionEvent, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<DeviceConnectionEvent>> ListByDeviceForUserAsync(
-        Guid deviceId,
-        Guid userId,
-        int take,
-        CancellationToken cancellationToken = default);
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -36,7 +36,7 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<TokenResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        var result = await _auth.LoginAsync(request, GetClientIp(), cancellationToken);
+        var result = await _auth.LoginAsync(request, cancellationToken);
         return Ok(result);
     }
 
@@ -47,7 +47,7 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<TokenResponse>> Refresh([FromBody] RefreshRequest request, CancellationToken cancellationToken)
     {
-        var result = await _auth.RefreshAsync(request, GetClientIp(), cancellationToken);
+        var result = await _auth.RefreshAsync(request, cancellationToken);
         return Ok(result);
     }
 
@@ -61,7 +61,7 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
     {
-        await _auth.LogoutAsync(request, GetClientIp(), cancellationToken);
+        await _auth.LogoutAsync(request, cancellationToken);
         return NoContent();
     }
 
@@ -83,11 +83,9 @@ public sealed class AuthController : ControllerBase
             throw new AppException(ErrorCodes.Unauthorized, "Unauthorized", "Authentication is required.", 401);
         }
 
-        await _auth.ChangePasswordAsync(userId, request, GetClientIp(), cancellationToken);
+        await _auth.ChangePasswordAsync(userId, request, cancellationToken);
         return NoContent();
     }
-
-    private string? GetClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
 }
 
 [ApiController]
@@ -162,16 +160,6 @@ public sealed class DevicesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DeviceResponse>> Get(Guid id, CancellationToken cancellationToken)
         => Ok(await _devices.GetAsync(RequireUserId(), id, cancellationToken));
-
-    [HttpGet("{id:guid}/connections")]
-    [ProducesResponseType(typeof(DeviceConnectionEventsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<DeviceConnectionEventsResponse>> Connections(
-        Guid id,
-        [FromQuery] int take = 20,
-        CancellationToken cancellationToken = default)
-        => Ok(await _devices.ListConnectionEventsAsync(RequireUserId(), id, take, cancellationToken));
 
     [HttpPost]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status201Created)]

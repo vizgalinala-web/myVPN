@@ -47,15 +47,6 @@ public sealed record DeviceResponse(
 
 public sealed record DevicesResponse(IReadOnlyList<DeviceResponse> Devices);
 
-public sealed record DeviceConnectionEventResponse(
-    Guid Id,
-    Guid? ServerId,
-    string EventType,
-    string? VpnAddress,
-    DateTimeOffset CreatedAt);
-
-public sealed record DeviceConnectionEventsResponse(IReadOnlyList<DeviceConnectionEventResponse> Events);
-
 public sealed record WireGuardPeerDto(
     string PublicKey,
     string Endpoint,
