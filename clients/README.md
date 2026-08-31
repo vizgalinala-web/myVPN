@@ -12,13 +12,18 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- login-config \
   --api http://localhost:5212/ \
   --email user@example.com \
   --password 'CorrectHorseBatteryStaple!'
+dotnet run --project clients/windows/MyVPN.Client.Cli -- servers --api http://localhost:5212/
+dotnet run --project clients/windows/MyVPN.Client.Cli -- devices \
+  --api http://localhost:5212/ --email user@example.com --password 'CorrectHorseBatteryStaple!'
 ```
 
 - `MyVPN.Client` — HTTP API SDK + local WireGuard keygen (NSec)
-- `MyVPN.Client.Cli` — register / fetch config helpers
+- `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / refresh
 - `MyVPN.Client.Tests` — keygen + config builder unit tests
 - Private keys stay local; API only receives public keys
 - Tunnel / Kill Switch / Wintun not implemented yet
+
+For File peer provisioning with Docker Compose, set `Vpn__PeerProvisioner=File` and sync `./peer-state` via `tools/wg-peer-sync`.
 
 ## iOS (Swift Package)
 

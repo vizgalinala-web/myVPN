@@ -33,6 +33,18 @@ services:
       RefreshTokens__LifetimeDays: ${RefreshTokens__LifetimeDays:-30}
       RefreshTokens__HashPepper: ${RefreshTokens__HashPepper:-DEV_ONLY_REFRESH_PEPPER_CHANGE_ME_32}
       Cors__AllowedOrigins__0: ${Cors__AllowedOrigins__0:-http://localhost:3000}
+      Vpn__DnsServers: ${Vpn__DnsServers:-1.1.1.1}
+      Vpn__AllowedIps: ${Vpn__AllowedIps:-0.0.0.0/0, ::/0}
+      Vpn__PersistentKeepaliveSeconds: ${Vpn__PersistentKeepaliveSeconds:-25}
+      Vpn__MaxDevicesPerUser: ${Vpn__MaxDevicesPerUser:-5}
+      Vpn__PeerProvisioner: ${Vpn__PeerProvisioner:-InMemory}
+      Vpn__PeerStateDirectory: ${Vpn__PeerStateDirectory:-/var/lib/myvpn/peer-state}
+      RefreshTokenCleanup__Enabled: ${RefreshTokenCleanup__Enabled:-true}
+      RefreshTokenCleanup__IntervalHours: ${RefreshTokenCleanup__IntervalHours:-24}
+      RefreshTokenCleanup__RetentionDays: ${RefreshTokenCleanup__RetentionDays:-7}
+    volumes:
+      # Mount when Vpn__PeerProvisioner=File so wg-peer-sync can read desired state.
+      - ${MYVPN_PEER_STATE_HOST_DIR:-./peer-state}:/var/lib/myvpn/peer-state
     ports:
       - "8080:8080"
     depends_on:
