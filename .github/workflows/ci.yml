@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Restore
+        run: dotnet restore backend/MyVPN.sln
+      - name: Build
+        run: dotnet build backend/MyVPN.sln -c Release --no-restore
+      - name: Test
+        run: dotnet test backend/MyVPN.sln -c Release --no-build --verbosity normal
+
+  clients:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Restore
+        run: dotnet restore clients/windows/MyVPN.Clients.sln
+      - name: Build
+        run: dotnet build clients/windows/MyVPN.Clients.sln -c Release --no-restore
+      - name: Test
+        run: dotnet test clients/windows/MyVPN.Clients.sln -c Release --no-build --verbosity normal
+      - name: Build wg-peer-sync
+        run: dotnet build tools/wg-peer-sync/wg-peer-sync.csproj -c Release
