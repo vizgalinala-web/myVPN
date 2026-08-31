@@ -5,6 +5,7 @@ using MyVPN.Application.Abstractions;
 using MyVPN.Application.Options;
 using MyVPN.Infrastructure.Persistence;
 using MyVPN.Infrastructure.Security;
+using MyVPN.Infrastructure.Vpn;
 
 namespace MyVPN.Infrastructure;
 
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.Configure<RefreshTokenOptions>(configuration.GetSection(RefreshTokenOptions.SectionName));
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
         services.Configure<RateLimitOptions>(configuration.GetSection(RateLimitOptions.SectionName));
+        services.Configure<VpnOptions>(configuration.GetSection(VpnOptions.SectionName));
 
         services.AddDbContext<MyVpnDbContext>(options =>
             options.UseNpgsql(connectionString, npgsql =>
@@ -35,6 +37,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
         services.AddSingleton<IRefreshTokenService, RefreshTokenService>();
         services.AddSingleton<IWireGuardPublicKeyValidator, WireGuardPublicKeyValidator>();
+        services.AddSingleton<IWireGuardPeerProvisioner, InMemoryWireGuardPeerProvisioner>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         return services;

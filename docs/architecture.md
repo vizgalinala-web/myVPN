@@ -3,8 +3,11 @@
 ## Phase status
 
 - **Phase 1**: Solution skeleton, layered projects, documentation (bootstrap)
-- **Phase 2** (current): Backend API, PostgreSQL, authentication, devices/servers read API
-- **Phase 3+**: WireGuard provisioning, native clients, Kill Switch, DNS leak protection (not started)
+- **Phase 2**: Backend API, PostgreSQL, authentication, devices/servers read API
+- **Phase 3** (current): WireGuard client configuration + VPN IP allocation (in-memory peer provisioner)
+- **Later**: Real WG node sync, native clients, Kill Switch, DNS leak protection
+
+See [wireguard.md](wireguard.md) for Phase 3 details.
 
 ## .NET version
 

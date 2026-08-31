@@ -41,3 +41,19 @@ public sealed class RateLimitPolicyOptions
     public int PermitLimit { get; set; } = 10;
     public int WindowSeconds { get; set; } = 60;
 }
+
+public sealed class VpnOptions
+{
+    public const string SectionName = "Vpn";
+
+    /// <summary>Comma-separated DNS servers embedded in client configs.</summary>
+    public string DnsServers { get; set; } = "1.1.1.1";
+
+    /// <summary>AllowedIPs for full-tunnel MVP.</summary>
+    public string AllowedIps { get; set; } = "0.0.0.0/0, ::/0";
+
+    public int PersistentKeepaliveSeconds { get; set; } = 25;
+
+    /// <summary>Host offset reserved for the WireGuard server inside each VpnNetwork CIDR (typically .1).</summary>
+    public int ReservedServerHostOffset { get; set; } = 1;
+}

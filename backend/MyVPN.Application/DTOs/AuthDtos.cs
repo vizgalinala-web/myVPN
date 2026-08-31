@@ -41,3 +41,21 @@ public sealed record DeviceResponse(
     bool IsActive);
 
 public sealed record DevicesResponse(IReadOnlyList<DeviceResponse> Devices);
+
+public sealed record WireGuardPeerDto(
+    string PublicKey,
+    string Endpoint,
+    string AllowedIps,
+    int PersistentKeepalive);
+
+/// <summary>
+/// Client connection material. Private keys are never included — the client inserts its own.
+/// </summary>
+public sealed record DeviceVpnConfigurationResponse(
+    Guid DeviceId,
+    Guid ServerId,
+    string ServerName,
+    string Address,
+    string Dns,
+    WireGuardPeerDto Peer,
+    string WireGuardQuickConfig);

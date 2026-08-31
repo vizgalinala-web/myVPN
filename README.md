@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 2**: Backend API, PostgreSQL, and authentication.
+Privacy-focused VPN product. This repository currently delivers **Phase 3**: Backend API, PostgreSQL, authentication, and WireGuard client configuration issuance.
 
 ## Current stack
 
@@ -117,14 +117,15 @@ Do **not** commit production secrets.
 | GET | `/api/servers` | Public (enabled only) |
 | GET | `/api/devices` | Bearer |
 | POST | `/api/devices` | Bearer |
+| GET | `/api/devices/{id}/configuration?serverId=` | Bearer |
 | DELETE | `/api/devices/{id}` | Bearer |
 
 See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 
-## Out of scope (Phase 2)
+## Out of scope (current)
 
 - iOS / Windows VPN clients
-- WireGuard provisioning
+- Production WireGuard node automation (`wg set` over SSH/API)
 - Kill Switch / DNS leak protection
 - Payments, admin UI, traffic collection
 
@@ -132,4 +133,5 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 
 - [Architecture](docs/architecture.md)
 - [Backend guide](docs/backend.md)
+- [WireGuard provisioning](docs/wireguard.md)
 - [Security](docs/security.md)

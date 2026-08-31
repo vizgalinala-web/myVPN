@@ -167,8 +167,14 @@ dotnet test backend/MyVPN.sln
 
 ## Phase 2 limitations
 
-- No WireGuard config issuance / server provisioning
+- No native iOS/Windows clients
+- No real WireGuard node `wg set` sync yet (in-memory provisioner)
 - No access-token revocation list
 - No email verification / password reset
 - No admin API for servers (seed/internal only)
-- No iOS/Windows clients
+
+## Phase 3 — WireGuard configuration
+
+See [wireguard.md](wireguard.md).
+
+`GET /api/devices/{id}/configuration?serverId=...` (Bearer) allocates `VpnAddress` and returns client config without private keys.

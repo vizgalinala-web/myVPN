@@ -120,8 +120,13 @@ public sealed class ServersController : ControllerBase
 public sealed class DevicesController : ControllerBase
 {
     private readonly DeviceService _devices;
+    private readonly VpnConfigurationService _vpnConfiguration;
 
-    public DevicesController(DeviceService devices) => _devices = devices;
+    public DevicesController(DeviceService devices, VpnConfigurationService vpnConfiguration)
+    {
+        _devices = devices;
+        _vpnConfiguration = vpnConfiguration;
+    }
 
     [HttpGet]
     [ProducesResponseType(typeof(DevicesResponse), StatusCodes.Status200OK)]
@@ -138,6 +143,33 @@ public sealed class DevicesController : ControllerBase
     {
         var created = await _devices.CreateAsync(RequireUserId(), request, cancellationToken);
         return Created($"/api/devices/{created.Id}", created);
+    }
+
+    /// <summary>
+    /// Issues WireGuard client configuration for an owned device against an enabled server.
+    /// Private keys are never returned. VpnAddress is allocated on first use.
+    /// </summary>
+    [HttpGet("{id:guid}/configuration")]
+    [ProducesResponseType(typeof(DeviceVpnConfigurationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<DeviceVpnConfigurationResponse>> GetConfiguration(
+        Guid id,
+        [FromQuery] Guid serverId,
+        CancellationToken cancellationToken)
+    {
+        if (serverId == Guid.Empty)
+        {
+            throw new AppException(
+                ErrorCodes.ValidationFailed,
+                "Validation failed",
+                "Query parameter serverId is required.",
+                400);
+        }
+
+        var config = await _vpnConfiguration.GetConfigurationAsync(RequireUserId(), id, serverId, cancellationToken);
+        return Ok(config);
     }
 
     [HttpDelete("{id:guid}")]
