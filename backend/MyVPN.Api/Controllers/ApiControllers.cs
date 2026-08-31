@@ -134,6 +134,23 @@ public sealed class DevicesController : ControllerBase
     public async Task<ActionResult<DevicesResponse>> List(CancellationToken cancellationToken)
         => Ok(await _devices.ListAsync(RequireUserId(), cancellationToken));
 
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeviceResponse>> Get(Guid id, CancellationToken cancellationToken)
+        => Ok(await _devices.GetAsync(RequireUserId(), id, cancellationToken));
+
+    [HttpGet("{id:guid}/connections")]
+    [ProducesResponseType(typeof(DeviceConnectionEventsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeviceConnectionEventsResponse>> Connections(
+        Guid id,
+        [FromQuery] int take = 20,
+        CancellationToken cancellationToken = default)
+        => Ok(await _devices.ListConnectionEventsAsync(RequireUserId(), id, take, cancellationToken));
+
     [HttpPost]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -150,10 +167,12 @@ public sealed class DevicesController : ControllerBase
     /// Private keys are never returned. VpnAddress is allocated on first use.
     /// </summary>
     [HttpGet("{id:guid}/configuration")]
+    [EnableRateLimiting("device-configuration")]
     [ProducesResponseType(typeof(DeviceVpnConfigurationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<DeviceVpnConfigurationResponse>> GetConfiguration(
         Guid id,
         [FromQuery] Guid serverId,
@@ -177,9 +196,11 @@ public sealed class DevicesController : ControllerBase
     /// Idempotent. Does not delete the device or revoke its VpnAddress allocation.
     /// </summary>
     [HttpPost("{id:guid}/disconnect")]
+    [EnableRateLimiting("device-disconnect")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Disconnect(Guid id, CancellationToken cancellationToken)
     {
         await _vpnConfiguration.DisconnectAsync(RequireUserId(), id, cancellationToken);

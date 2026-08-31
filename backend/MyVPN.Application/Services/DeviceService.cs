@@ -1,8 +1,10 @@
 using FluentValidation;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MyVPN.Application.Abstractions;
 using MyVPN.Application.Common;
 using MyVPN.Application.DTOs;
+using MyVPN.Application.Options;
 using MyVPN.Domain.Entities;
 using MyVPN.Domain.Enums;
 
@@ -12,26 +14,32 @@ public sealed class DeviceService
 {
     private readonly IDeviceRepository _devices;
     private readonly IUserRepository _users;
+    private readonly IDeviceConnectionEventRepository _connectionEvents;
     private readonly IWireGuardPublicKeyValidator _publicKeyValidator;
     private readonly VpnConfigurationService _vpnConfiguration;
     private readonly IClock _clock;
+    private readonly VpnOptions _vpnOptions;
     private readonly IValidator<CreateDeviceRequest> _createValidator;
     private readonly ILogger<DeviceService> _logger;
 
     public DeviceService(
         IDeviceRepository devices,
         IUserRepository users,
+        IDeviceConnectionEventRepository connectionEvents,
         IWireGuardPublicKeyValidator publicKeyValidator,
         VpnConfigurationService vpnConfiguration,
         IClock clock,
+        IOptions<VpnOptions> vpnOptions,
         IValidator<CreateDeviceRequest> createValidator,
         ILogger<DeviceService> logger)
     {
         _devices = devices;
         _users = users;
+        _connectionEvents = connectionEvents;
         _publicKeyValidator = publicKeyValidator;
         _vpnConfiguration = vpnConfiguration;
         _clock = clock;
+        _vpnOptions = vpnOptions.Value;
         _createValidator = createValidator;
         _logger = logger;
     }
@@ -41,6 +49,40 @@ public sealed class DeviceService
         await EnsureActiveUserAsync(userId, cancellationToken);
         var devices = await _devices.ListByUserAsync(userId, cancellationToken);
         return new DevicesResponse(devices.Select(Map).ToList());
+    }
+
+    public async Task<DeviceResponse> GetAsync(Guid userId, Guid deviceId, CancellationToken cancellationToken = default)
+    {
+        await EnsureActiveUserAsync(userId, cancellationToken);
+        var device = await _devices.FindByIdForUserAsync(deviceId, userId, cancellationToken);
+        if (device is null)
+        {
+            throw new AppException(ErrorCodes.NotFound, "Not found", "Device not found.", 404);
+        }
+
+        return Map(device);
+    }
+
+    public async Task<DeviceConnectionEventsResponse> ListConnectionEventsAsync(
+        Guid userId,
+        Guid deviceId,
+        int take = 20,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureActiveUserAsync(userId, cancellationToken);
+        var device = await _devices.FindByIdForUserAsync(deviceId, userId, cancellationToken);
+        if (device is null)
+        {
+            throw new AppException(ErrorCodes.NotFound, "Not found", "Device not found.", 404);
+        }
+
+        var events = await _connectionEvents.ListByDeviceForUserAsync(deviceId, userId, take, cancellationToken);
+        return new DeviceConnectionEventsResponse(events.Select(e => new DeviceConnectionEventResponse(
+            e.Id,
+            e.ServerId,
+            e.EventType.ToString(),
+            e.VpnAddress,
+            e.CreatedAt)).ToList());
     }
 
     public async Task<DeviceResponse> CreateAsync(Guid userId, CreateDeviceRequest request, CancellationToken cancellationToken = default)
@@ -73,6 +115,16 @@ public sealed class DeviceService
         }
 
         await EnsureActiveUserAsync(userId, cancellationToken);
+
+        var deviceCount = await _devices.CountByUserAsync(userId, cancellationToken);
+        if (deviceCount >= _vpnOptions.MaxDevicesPerUser)
+        {
+            throw new AppException(
+                ErrorCodes.Conflict,
+                "Device limit reached",
+                $"A maximum of {_vpnOptions.MaxDevicesPerUser} devices is allowed per account.",
+                409);
+        }
 
         if (await _devices.PublicKeyExistsAsync(request.PublicKey, cancellationToken))
         {
@@ -116,7 +168,6 @@ public sealed class DeviceService
     {
         await EnsureActiveUserAsync(userId, cancellationToken);
 
-        // Ownership filter in repository — foreign devices look like missing resources (404).
         var device = await _devices.FindByIdForUserAsync(deviceId, userId, cancellationToken);
         if (device is null)
         {
