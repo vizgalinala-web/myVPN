@@ -45,3 +45,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Secret scan
         run: bash scripts/secret-scan.sh
+      - name: VPN node preflight self-test
+        run: bash scripts/vpn-node-check.sh --self-test

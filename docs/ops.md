@@ -1,18 +1,38 @@
-# MyVPN WireGuard peer sync (Phase 7 ops)
+# MyVPN WireGuard node ops
 
-Watches File provisioner peer-state and applies `wg set` on this VPN node.
+Keeps File-provisioner peer JSON aligned with `wg set` on a VPN node. Default is **dry-run**. Apply is env-gated and never uses a shell.
 
 ## Safety
 
-- Default dry-run is preferred for first bring-up.
-- Apply mode requires `MYVPN_WG_SYNC_ALLOW_APPLY=1`.
-- The tool runs `wg` via Process (no shell) and validates interface / public keys.
+- Dry-run first.
+- `--apply` requires `MYVPN_WG_SYNC_ALLOW_APPLY=1`.
+- `wg-peer-sync` starts `wg` via Process (no `sh -c`).
+- Interface names: ASCII alnum / `_` `-` `.`, max 15 characters (same as the planner).
+
+## One-shot bootstrap
+
+From the repo root (does **not** apply until you pass `--apply`):
+
+```bash
+export MYVPN_PEER_STATE=/var/lib/myvpn/peer-state
+export MYVPN_WG_INTERFACE=wg0
+sudo install -d -m 700 "$MYVPN_PEER_STATE"
+bash scripts/vpn-node-check.sh --peer-state "$MYVPN_PEER_STATE" --interface "$MYVPN_WG_INTERFACE"
+bash scripts/vpn-node-bootstrap.sh --peer-state "$MYVPN_PEER_STATE" --interface "$MYVPN_WG_INTERFACE"
+```
+
+Apply once (dangerous — only on the node that owns `wg0`):
+
+```bash
+export MYVPN_WG_SYNC_ALLOW_APPLY=1
+bash scripts/vpn-node-bootstrap.sh --peer-state "$MYVPN_PEER_STATE" --interface "$MYVPN_WG_INTERFACE" --apply
+```
 
 ## Node layout
 
-1. API writes peer JSON when `Vpn__PeerProvisioner=File` into a shared directory.
-2. This host mounts/syncs that directory (NFS, rsync, local disk, etc.).
-3. `wg-peer-sync --watch --apply` keeps WireGuard peers aligned.
+1. API uses `Vpn__PeerProvisioner=File` and writes JSON into a shared directory.
+2. This host mounts that directory (`/var/lib/myvpn/peer-state`).
+3. `wg-peer-sync --watch --apply` keeps peers aligned.
 
 ## Manual dry-run
 
@@ -20,7 +40,7 @@ Watches File provisioner peer-state and applies `wg set` on this VPN node.
 dotnet run --project tools/wg-peer-sync -- /var/lib/myvpn/peer-state
 ```
 
-## Apply once
+## Apply once (tool only)
 
 ```bash
 export MYVPN_WG_SYNC_ALLOW_APPLY=1
@@ -30,15 +50,20 @@ dotnet run --project tools/wg-peer-sync -- /var/lib/myvpn/peer-state --interface
 
 ## systemd
 
-See `deploy/systemd/myvpn-wg-peer-sync.service`.
+Unit: `deploy/systemd/myvpn-wg-peer-sync.service`.
 
 ```bash
-sudo install -d /var/lib/myvpn/peer-state
-sudo cp deploy/systemd/myvpn-wg-peer-sync.service /etc/systemd/system/
-# edit WorkingDirectory / paths / User as needed
+sudo bash scripts/vpn-node-bootstrap.sh --install-systemd --prefix /opt/myvpn
+# then edit ExecStart/WorkingDirectory if the published build path differs
 sudo systemctl daemon-reload
 sudo systemctl enable --now myvpn-wg-peer-sync.service
 journalctl -u myvpn-wg-peer-sync -f
 ```
 
-Run as a user that can call `wg` (typically root or a capability-bounded service account).
+Run as a user that can call `wg` (root or `CAP_NET_ADMIN`). The unit sets `ProtectHome=true` and `ReadWritePaths=/var/lib/myvpn/peer-state`.
+
+## Preflight in CI
+
+```bash
+bash scripts/vpn-node-check.sh --self-test
+```
