@@ -72,7 +72,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "MyVPN API",
         Version = "v1",
-        Description = "MyVPN Phase 2 Backend API"
+        Description = "MyVPN Backend API"
     });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -208,6 +208,18 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = rateLimitOptions.DeviceDisconnect.PermitLimit,
                 Window = TimeSpan.FromSeconds(rateLimitOptions.DeviceDisconnect.WindowSeconds),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("account-delete", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User?.FindFirst("sub")?.Value
+                ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.AccountDelete.PermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.AccountDelete.WindowSeconds),
                 QueueLimit = 0
             }));
 });

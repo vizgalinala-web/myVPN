@@ -89,6 +89,34 @@ internal static class TestHelpers
             NullLogger<DeviceService>.Instance);
     }
 
+    public static (AccountService Account, InMemoryWireGuardPeerProvisioner Provisioner, VpnConfigurationService Vpn)
+        CreateAccountStack(MyVpnDbContext db, TestClock? clock = null)
+    {
+        clock ??= new TestClock();
+        var vpnOptions = Options.Create(new VpnOptions { MaxDevicesPerUser = 5 });
+        var provisioner = new InMemoryWireGuardPeerProvisioner(NullLogger<InMemoryWireGuardPeerProvisioner>.Instance);
+        var vpnConfiguration = new VpnConfigurationService(
+            new DeviceRepository(db),
+            new UserRepository(db),
+            new VpnServerRepository(db),
+            new VpnIpAllocator(),
+            provisioner,
+            clock,
+            vpnOptions,
+            NullLogger<VpnConfigurationService>.Instance);
+
+        var account = new AccountService(
+            new UserRepository(db),
+            new DeviceRepository(db),
+            new RefreshTokenRepository(db),
+            new Argon2PasswordHasher(),
+            vpnConfiguration,
+            new DeleteAccountRequestValidator(),
+            NullLogger<AccountService>.Instance);
+
+        return (account, provisioner, vpnConfiguration);
+    }
+
     public const string ValidPublicKeyA = "ERERERERERERERERERERERERERERERERERERERERERE=";
     public const string ValidPublicKeyB = "IiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI=";
     public const string ValidPassword = "CorrectHorseBatteryStaple!";

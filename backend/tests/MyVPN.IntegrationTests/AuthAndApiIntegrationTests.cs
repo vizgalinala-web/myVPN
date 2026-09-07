@@ -54,7 +54,8 @@ public sealed class ApiFixture : IAsyncLifetime
                         ["RateLimiting:Register:PermitLimit"] = "1000",
                         ["RateLimiting:Login:PermitLimit"] = "1000",
                         ["RateLimiting:Refresh:PermitLimit"] = "1000",
-                        ["RateLimiting:Logout:PermitLimit"] = "1000"
+                        ["RateLimiting:Logout:PermitLimit"] = "1000",
+                        ["RateLimiting:AccountDelete:PermitLimit"] = "1000"
                     });
                 });
             });
@@ -255,6 +256,57 @@ public sealed class AuthAndApiIntegrationTests
         unknownBody.Should().Contain("INVALID_CREDENTIALS");
         wrongBody.Should().Contain("INVALID_CREDENTIALS");
         unknownBody.Should().Contain("traceId");
+    }
+
+    [SkippableFact]
+    public async Task DeleteAccount_ErasesUserAndAllowsReregister()
+    {
+        RequireDocker();
+        var client = _fixture.Factory!.CreateClient();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var email = $"erase_{suffix}@example.com";
+        const string password = "CorrectHorseBatteryStaple!";
+
+        (await client.PostAsJsonAsync("/api/auth/register", new { email, password }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
+        login.StatusCode.Should().Be(HttpStatusCode.OK);
+        var tokens = await login.Content.ReadFromJsonAsync<TokenResponse>(JsonOptions);
+        var authClient = _fixture.Factory!.CreateClient();
+        authClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens!.AccessToken);
+
+        var createDevice = await authClient.PostAsJsonAsync("/api/devices", new
+        {
+            name = "To erase",
+            platform = "Windows",
+            publicKey = "ERERERERERERERERERERERERERERERERERERERERERE="
+        });
+        createDevice.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var wrong = new HttpRequestMessage(HttpMethod.Delete, "/api/account")
+        {
+            Content = JsonContent.Create(new { password = "WrongPasswordValue!" })
+        };
+        var wrongResponse = await authClient.SendAsync(wrong);
+        wrongResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await wrongResponse.Content.ReadAsStringAsync()).Should().Contain("INVALID_CREDENTIALS");
+
+        var erase = new HttpRequestMessage(HttpMethod.Delete, "/api/account")
+        {
+            Content = JsonContent.Create(new { password })
+        };
+        var erased = await authClient.SendAsync(erase);
+        erased.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var me = await authClient.GetAsync("/api/me");
+        me.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var loginGone = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
+        loginGone.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var reregister = await client.PostAsJsonAsync("/api/auth/register", new { email, password });
+        reregister.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 }
 

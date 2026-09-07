@@ -57,4 +57,4 @@ Application rate limits reduce credential stuffing noise. They are **not** a sub
 - [ ] Administrative access control for server management
 - [ ] Access-token denylist or short-lived tokens + introspection (if required)
 - [ ] WireGuard key lifecycle and server private-key storage outside DB
-- [ ] `DELETE /api/account` — account erasure (see [backend.md](backend.md))
+- [x] `DELETE /api/account` — account erasure (see [backend.md](backend.md))

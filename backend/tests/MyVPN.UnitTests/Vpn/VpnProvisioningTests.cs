@@ -52,6 +52,7 @@ public sealed class VpnProvisioningTests
         config.Peer.Endpoint.Should().Be(server.Endpoint);
         config.WireGuardQuickConfig.Should().Contain("[Interface]");
         config.WireGuardQuickConfig.Should().Contain("Address = 10.8.0.2/32");
+        config.WireGuardQuickConfig.Should().Contain("Block untunneled traffic");
         config.WireGuardQuickConfig.Should().NotContain("PrivateKey =");
         config.WireGuardQuickConfig.ToLowerInvariant().Should().NotContain("privatekey =");
 

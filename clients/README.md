@@ -18,10 +18,10 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- devices \
 ```
 
 - `MyVPN.Client` — HTTP API SDK + local WireGuard keygen (NSec)
-- `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / refresh / logout
+- `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / refresh / logout / delete-account
 - `MyVPN.Client.Tests` — keygen + config builder unit tests
 - Private keys stay local; API only receives public keys
-- Tunnel / Kill Switch / Wintun not implemented yet
+- Native Wintun is not implemented; import `.conf` into WireGuard for Windows and enable Kill Switch there
 
 For File peer provisioning with Docker Compose, set `Vpn__PeerProvisioner=File` and sync `./peer-state` via `tools/wg-peer-sync`.
 
@@ -44,6 +44,7 @@ Next iOS steps (not in this repo yet):
 2. Generate keys in Keychain
 3. Call API, assemble NETunnelProviderProtocol / WireGuard config
 4. Kill Switch via `includeAllNetworks` / route enforcement
+5. Call `deleteAccount(password:)` for GDPR-style erasure
 
 ## wg-peer-sync tool
 

@@ -51,10 +51,12 @@ public final class MyVPNApiClient {
     }
 
     public func disconnect(deviceId: UUID) async throws {
-        let _: Empty = try await post(path: "api/devices/\(deviceId.uuidString)/disconnect", body: [:])
+        try await sendNoContent(method: "POST", path: "api/devices/\(deviceId.uuidString)/disconnect", body: [:])
     }
 
-    private struct Empty: Decodable {}
+    public func deleteAccount(password: String) async throws {
+        try await sendNoContent(method: "DELETE", path: "api/account", body: ["password": password])
+    }
 
     private func get<T: Decodable>(path: String) async throws -> T {
         guard let url = URL(string: path, relativeTo: baseURL) else { throw MyVPNApiError.invalidURL }
@@ -72,6 +74,22 @@ public final class MyVPNApiClient {
         applyAuth(&request)
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return try await send(request)
+    }
+
+    private func sendNoContent(method: String, path: String, body: [String: String]) async throws {
+        guard let url = URL(string: path, relativeTo: baseURL) else { throw MyVPNApiError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        applyAuth(&request)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw MyVPNApiError.http(-1, nil)
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw MyVPNApiError.http(http.statusCode, nil)
+        }
     }
 
     private func applyAuth(_ request: inout URLRequest) {

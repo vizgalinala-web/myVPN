@@ -1,6 +1,6 @@
-# Client tunnel notes (Phase 7)
+# Client tunnel notes
 
-Native Wintun / Network Extension tunnels are not shipped yet. Until then:
+Native Wintun / Network Extension tunnels are not shipped yet. Until then, import a full-tunnel WireGuard config (`AllowedIPs = 0.0.0.0/0, ::/0`, pinned `DNS`).
 
 ## Windows
 
@@ -16,7 +16,8 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- save-config \
 ```
 
 3. In WireGuard for Windows: **Import tunnel(s) from file** → select `myvpn.conf`.
-4. Activate the tunnel. To disconnect server-side peer state later:
+4. Activate the tunnel, then enable **Block untunneled traffic (kill-switch)** so IPv4/IPv6/DNS cannot bypass the tunnel.
+5. To disconnect server-side peer state later:
 
 ```bash
 dotnet run --project clients/windows/MyVPN.Client.Cli -- disconnect \
@@ -26,8 +27,15 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- disconnect \
   --device-id <guid>
 ```
 
-Kill Switch / DNS leak protection are not automated by MyVPN yet; WireGuard for Windows "Block untunneled traffic" is an interim option.
+Erase the account (devices, tokens, peers):
+
+```bash
+dotnet run --project clients/windows/MyVPN.Client.Cli -- delete-account \
+  --api https://api.example.com/ \
+  --email user@example.com \
+  --password '...'
+```
 
 ## iOS
 
-Use the `MyVPNApi` Swift package to obtain configuration, then feed a Packet Tunnel provider / WireGuard kit. Key material must stay in Keychain. Network Extension work is still out of scope for this repo snapshot.
+Use the `MyVPNApi` Swift package to obtain configuration, then feed a Packet Tunnel provider / WireGuard kit. Key material must stay in Keychain. Set `includeAllNetworks` for Kill Switch when the extension ships. Account erasure: `deleteAccount(password:)`. Network Extension work is still out of scope for this repo snapshot.

@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
         services.AddSingleton<IVpnIpAllocator, VpnIpAllocator>();
         services.AddScoped<AuthService>();
+        services.AddScoped<AccountService>();
         services.AddScoped<DeviceService>();
         services.AddScoped<UserQueryService>();
         services.AddScoped<VpnServerService>();

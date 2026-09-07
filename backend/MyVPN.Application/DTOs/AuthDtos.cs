@@ -18,6 +18,9 @@ public sealed record LogoutRequest(string RefreshToken);
 
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
+/// <summary>Confirms account erasure. Password is verified and never logged.</summary>
+public sealed record DeleteAccountRequest(string Password);
+
 public sealed record CurrentUserResponse(Guid Id, string Email, DateTimeOffset CreatedAt);
 
 public sealed record VpnServerDto(

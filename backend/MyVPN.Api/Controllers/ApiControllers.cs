@@ -89,6 +89,38 @@ public sealed class AuthController : ControllerBase
 }
 
 [ApiController]
+[Route("api/account")]
+[Authorize]
+public sealed class AccountController : ControllerBase
+{
+    private readonly AccountService _accounts;
+
+    public AccountController(AccountService accounts) => _accounts = accounts;
+
+    /// <summary>
+    /// Permanently deletes the authenticated account, devices, refresh tokens, and VPN peers.
+    /// Requires the current password. Idempotent only in the sense that a deleted user cannot call it again (401).
+    /// </summary>
+    [HttpDelete]
+    [EnableRateLimiting("account-delete")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> Delete([FromBody] DeleteAccountRequest request, CancellationToken cancellationToken)
+    {
+        var value = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(value, out var userId))
+        {
+            throw new AppException(ErrorCodes.Unauthorized, "Unauthorized", "Authentication is required.", 401);
+        }
+
+        await _accounts.DeleteAccountAsync(userId, request, cancellationToken);
+        return NoContent();
+    }
+}
+
+[ApiController]
 [Route("api/me")]
 [Authorize]
 public sealed class MeController : ControllerBase
