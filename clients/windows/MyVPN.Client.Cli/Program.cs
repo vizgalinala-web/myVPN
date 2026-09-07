@@ -341,75 +341,28 @@ static string[] WithOut(string[] args, string outPath)
 
 static int ApplyTunnel(string configPath, bool up, bool dryRun)
 {
-    var full = Path.GetFullPath(configPath);
-    if (up && !File.Exists(full))
+    var result = new VpnTunnelService().Apply(configPath, up, dryRun);
+    if (!string.IsNullOrWhiteSpace(result.DisplayCommand))
     {
-        return Fail($"Config not found: {full}. Run connect or save-config --out <file.conf> first.");
+        Console.Error.WriteLine($"# {result.DisplayCommand}");
     }
 
-    var windows = OperatingSystem.IsWindows();
-    var install = new WireGuardLocator(windows: windows).Find();
-    if (install is null)
+    if (!string.IsNullOrWhiteSpace(result.StandardOutput))
     {
-        Console.Error.WriteLine(WireGuardTunnelPlanner.MissingToolMessage(windows));
-        Console.Error.WriteLine($"# config={full}");
-        return 2;
+        Console.Write(result.StandardOutput.EndsWith('\n') ? result.StandardOutput : result.StandardOutput + Environment.NewLine);
     }
 
-    var command = up
-        ? WireGuardTunnelPlanner.PlanUp(install, full)
-        : WireGuardTunnelPlanner.PlanDown(install, full);
-
-    Console.Error.WriteLine($"# {command.Display}");
-    if (dryRun)
+    if (!string.IsNullOrWhiteSpace(result.StandardError))
     {
-        Console.WriteLine(command.Display);
-        return 0;
+        Console.Error.WriteLine(result.StandardError);
     }
 
-    var code = RunNoShell(command);
-    if (code == 0 && up && windows)
+    if (result.ExitCode == 1 && result.StandardError.StartsWith("Config not found", StringComparison.Ordinal))
     {
-        Console.Error.WriteLine("# Enable Kill Switch in WireGuard for Windows: Block untunneled traffic.");
+        return Fail(result.StandardError);
     }
 
-    return code;
-}
-
-static int RunNoShell(WireGuardCommand command)
-{
-    var start = new System.Diagnostics.ProcessStartInfo
-    {
-        FileName = command.FileName,
-        UseShellExecute = false,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true
-    };
-    foreach (var argument in command.Arguments)
-    {
-        start.ArgumentList.Add(argument);
-    }
-
-    using var process = System.Diagnostics.Process.Start(start);
-    if (process is null)
-    {
-        return Fail($"Failed to start {command.FileName}");
-    }
-
-    var stdout = process.StandardOutput.ReadToEnd();
-    var stderr = process.StandardError.ReadToEnd();
-    process.WaitForExit();
-    if (!string.IsNullOrWhiteSpace(stdout))
-    {
-        Console.Write(stdout);
-    }
-
-    if (!string.IsNullOrWhiteSpace(stderr))
-    {
-        Console.Error.Write(stderr);
-    }
-
-    return process.ExitCode;
+    return result.ExitCode;
 }
 
 static bool Has(string[] args, string name)

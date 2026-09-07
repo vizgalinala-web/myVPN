@@ -1,11 +1,19 @@
 # Client tunnel notes
 
-The Windows CLI can bring a saved `.conf` up and down through the official WireGuard tools (no shell, no in-process Wintun). iOS Network Extension is not shipped yet.
+The Windows CLI and desktop app bring a saved `.conf` up and down through the official WireGuard tools (no shell, no in-process Wintun). iOS Network Extension is not shipped yet.
 
 ## Windows
 
 1. Install [WireGuard for Windows](https://www.wireguard.com/install/).
-2. One-shot: fetch config and start the tunnel service:
+2. Desktop app (Windows):
+
+```bash
+dotnet run --project clients/windows/MyVPN.Client.App
+```
+
+Enter API URL, email and password → **Connect**. The app never writes the password to disk. Enable **Block untunneled traffic** in WireGuard after connect.
+
+3. CLI one-shot: fetch config and start the tunnel service:
 
 ```bash
 dotnet run --project clients/windows/MyVPN.Client.Cli -- connect \
