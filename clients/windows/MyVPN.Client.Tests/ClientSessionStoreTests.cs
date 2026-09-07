@@ -32,6 +32,11 @@ public sealed class ClientSessionStoreTests
             json.Should().NotContain("PrivateKey");
             json.Should().NotContain("refreshToken");
             json.Should().NotContain("Bearer");
+            if (!OperatingSystem.IsWindows())
+            {
+                var mode = File.GetUnixFileMode(path);
+                mode.Should().Be(LocalSecretFile.OwnerReadWrite);
+            }
         }
         finally
         {
