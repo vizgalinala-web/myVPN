@@ -7,6 +7,12 @@ Solution: `clients/windows/MyVPN.Clients.sln`
 ```bash
 dotnet build clients/windows/MyVPN.Clients.sln
 dotnet test clients/windows/MyVPN.Clients.sln
+dotnet run --project clients/windows/MyVPN.Client.App
+```
+
+On Windows, install [WireGuard for Windows](https://www.wireguard.com/install/) first. The desktop app writes `myvpn.conf` and calls `wireguard.exe /installtunnelservice` (same as the CLI `connect`). Enable **Block untunneled traffic** for Kill Switch. Password is not written to disk.
+
+```bash
 dotnet run --project clients/windows/MyVPN.Client.Cli -- keygen
 dotnet run --project clients/windows/MyVPN.Client.Cli -- login-config \
   --api http://localhost:5212/ \
@@ -18,6 +24,7 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- devices \
 ```
 
 - `MyVPN.Client` — HTTP API SDK + local WireGuard keygen (NSec)
+- `MyVPN.Client.App` — Windows desktop UI (Avalonia): API URL, email, password, Connect / Stop
 - `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / refresh / logout / delete-account / connect / tunnel-up / tunnel-down / status / stop / change-password
 - `MyVPN.Client.Tests` — keygen + config builder + tunnel planner unit tests
 - Private keys stay local; API only receives public keys

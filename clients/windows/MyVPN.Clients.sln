@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.Client.Cli", "MyVPN.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.Client.Tests", "MyVPN.Client.Tests\MyVPN.Client.Tests.csproj", "{E277A6A4-1D94-4CAA-A62D-A74EB47FAB63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyVPN.Client.App", "MyVPN.Client.App\MyVPN.Client.App.csproj", "{14A67352-F367-4ABC-86A2-7252511ED91C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{E277A6A4-1D94-4CAA-A62D-A74EB47FAB63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E277A6A4-1D94-4CAA-A62D-A74EB47FAB63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E277A6A4-1D94-4CAA-A62D-A74EB47FAB63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14A67352-F367-4ABC-86A2-7252511ED91C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14A67352-F367-4ABC-86A2-7252511ED91C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14A67352-F367-4ABC-86A2-7252511ED91C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14A67352-F367-4ABC-86A2-7252511ED91C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

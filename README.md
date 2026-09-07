@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 13**: Backend API, clients, peer-sync, privacy-by-design, account erasure, WireGuard tunnel CLI, local session hygiene, and **VPN-node bootstrap/preflight scripts**.
+Privacy-focused VPN product. This repository currently delivers **Phase 14**: Backend API, CLI, VPN-node scripts, and a **Windows desktop client** (Avalonia) that connects through official WireGuard.
 
 ## Current stack
 
