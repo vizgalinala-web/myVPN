@@ -31,3 +31,9 @@ pgdata/
 peer-state/
 **/peer-state/
 **/.wg-peer-sync.cache.json
+
+# Local client artifacts (may contain WireGuard private keys)
+session.json
+**/session.json
+**/myvpn.conf
+**/.myvpn/

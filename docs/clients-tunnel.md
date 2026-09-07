@@ -52,7 +52,7 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- stop --password '...'
 dotnet run --project clients/windows/MyVPN.Client.Cli -- stop --local-only
 ```
 
-`stop` runs `tunnel-down`. With `--password` it also calls `POST /api/devices/{id}/disconnect` using the saved device id.
+`stop` runs `tunnel-down`. With `--password` it also calls `POST /api/devices/{id}/disconnect` using the saved device id. `--forget` deletes `session.json`. On Unix, `.conf` and `session.json` are written with mode `600`. `status --json` prints the same metadata as JSON.
 
 Erase the account (devices, tokens, peers):
 

@@ -39,6 +39,7 @@ Record pass/fail evidence in this document or linked CI artifacts.
 |---|---|
 | Device ID = random UUID (app-generated) | Future app targets |
 | WireGuard keys local only | CLI/SDK behaviour |
+| Local .conf / session.json owner-only | Unix mode 600; gitignored |
 | No analytics/tracking SDKs | Dependency review |
 | iOS: no extra sensitive permissions | `Info.plist` / entitlements when app ships |
 | iOS privacy manifest accurate | `clients/ios/Sources/MyVPNApi/PrivacyInfo.xcprivacy` |

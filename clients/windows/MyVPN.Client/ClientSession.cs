@@ -45,8 +45,7 @@ public static class ClientSessionStore
         var full = Path.GetFullPath(path ?? DefaultPath());
         Directory.CreateDirectory(Path.GetDirectoryName(full) ?? DefaultDirectory());
         var json = JsonSerializer.Serialize(session, JsonOptions);
-        File.WriteAllText(full, json);
-        TryRestrictAccess(full);
+        LocalSecretFile.WriteAllText(full, json);
     }
 
     public static ClientSession? Load(string? path = null)
@@ -71,22 +70,5 @@ public static class ClientSessionStore
 
         File.Delete(full);
         return true;
-    }
-
-    private static void TryRestrictAccess(string path)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
-        try
-        {
-            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
-        }
-        catch (Exception)
-        {
-            // Best-effort; session has no secrets besides email/device ids.
-        }
     }
 }
