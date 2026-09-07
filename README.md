@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 12**: Backend API, clients, peer-sync, privacy-by-design, account erasure, WireGuard tunnel CLI, local session, and **owner-only local config files** (Unix mode 600; `session.json` / `myvpn.conf` gitignored).
+Privacy-focused VPN product. This repository currently delivers **Phase 13**: Backend API, clients, peer-sync, privacy-by-design, account erasure, WireGuard tunnel CLI, local session hygiene, and **VPN-node bootstrap/preflight scripts**.
 
 ## Current stack
 
@@ -135,7 +135,7 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 - [Architecture](docs/architecture.md)
 - [Backend guide](docs/backend.md)
 - [WireGuard provisioning](docs/wireguard.md)
-- [VPN node ops](docs/ops.md)
+- [VPN node ops](docs/ops.md) — `scripts/vpn-node-check.sh` / `scripts/vpn-node-bootstrap.sh`
 - [Client tunnel import](docs/clients-tunnel.md)
 - [Clients](clients/README.md)
 - [Security](docs/security.md)
