@@ -18,10 +18,10 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- devices \
 ```
 
 - `MyVPN.Client` — HTTP API SDK + local WireGuard keygen (NSec)
-- `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / refresh / logout / delete-account
-- `MyVPN.Client.Tests` — keygen + config builder unit tests
+- `MyVPN.Client.Cli` — register / config / servers / devices / disconnect / refresh / logout / delete-account / connect / tunnel-up / tunnel-down
+- `MyVPN.Client.Tests` — keygen + config builder + tunnel planner unit tests
 - Private keys stay local; API only receives public keys
-- Native Wintun is not implemented; import `.conf` into WireGuard for Windows and enable Kill Switch there
+- Local tunnel uses WireGuard for Windows (`/installtunnelservice`) or `wg-quick`; in-process Wintun is not implemented
 
 For File peer provisioning with Docker Compose, set `Vpn__PeerProvisioner=File` and sync `./peer-state` via `tools/wg-peer-sync`.
 

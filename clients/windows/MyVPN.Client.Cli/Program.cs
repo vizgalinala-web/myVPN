@@ -21,6 +21,9 @@ try
         "refresh" => await RefreshAsync(args),
         "logout" => await LogoutAsync(args),
         "delete-account" => await DeleteAccountAsync(args),
+        "connect" => await ConnectAsync(args),
+        "tunnel-up" => TunnelUp(args),
+        "tunnel-down" => TunnelDown(args),
         _ => Fail($"Unknown command: {command}")
     };
 }
@@ -158,6 +161,128 @@ static async Task<int> DeleteAccountAsync(string[] args)
     return 0;
 }
 
+static async Task<int> ConnectAsync(string[] args)
+{
+    var outPath = Get(args, "--out") ?? WireGuardTunnelPlanner.DefaultConfigPath();
+    var loginArgs = WithOut(args, outPath);
+    var written = await LoginConfigAsync(loginArgs);
+    if (written != 0)
+    {
+        return written;
+    }
+
+    if (Has(args, "--skip-tunnel"))
+    {
+        Console.Error.WriteLine("# Config written. Skipping local tunnel (--skip-tunnel).");
+        return 0;
+    }
+
+    return ApplyTunnel(outPath, up: true, dryRun: Has(args, "--dry-run"));
+}
+
+static int TunnelUp(string[] args)
+{
+    var conf = Get(args, "--conf") ?? Get(args, "--out") ?? WireGuardTunnelPlanner.DefaultConfigPath();
+    return ApplyTunnel(conf, up: true, dryRun: Has(args, "--dry-run"));
+}
+
+static int TunnelDown(string[] args)
+{
+    var conf = Get(args, "--conf") ?? Get(args, "--out") ?? WireGuardTunnelPlanner.DefaultConfigPath();
+    return ApplyTunnel(conf, up: false, dryRun: Has(args, "--dry-run"));
+}
+
+static string[] WithOut(string[] args, string outPath)
+{
+    var list = args.ToList();
+    var idx = list.IndexOf("--out");
+    if (idx >= 0 && idx < list.Count - 1)
+    {
+        list[idx + 1] = outPath;
+        return list.ToArray();
+    }
+
+    list.Add("--out");
+    list.Add(outPath);
+    return list.ToArray();
+}
+
+static int ApplyTunnel(string configPath, bool up, bool dryRun)
+{
+    var full = Path.GetFullPath(configPath);
+    if (up && !File.Exists(full))
+    {
+        return Fail($"Config not found: {full}. Run connect or save-config --out <file.conf> first.");
+    }
+
+    var windows = OperatingSystem.IsWindows();
+    var install = new WireGuardLocator(windows: windows).Find();
+    if (install is null)
+    {
+        Console.Error.WriteLine(WireGuardTunnelPlanner.MissingToolMessage(windows));
+        Console.Error.WriteLine($"# config={full}");
+        return 2;
+    }
+
+    var command = up
+        ? WireGuardTunnelPlanner.PlanUp(install, full)
+        : WireGuardTunnelPlanner.PlanDown(install, full);
+
+    Console.Error.WriteLine($"# {command.Display}");
+    if (dryRun)
+    {
+        Console.WriteLine(command.Display);
+        return 0;
+    }
+
+    var code = RunNoShell(command);
+    if (code == 0 && up && windows)
+    {
+        Console.Error.WriteLine("# Enable Kill Switch in WireGuard for Windows: Block untunneled traffic.");
+    }
+
+    return code;
+}
+
+static int RunNoShell(WireGuardCommand command)
+{
+    var start = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = command.FileName,
+        UseShellExecute = false,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true
+    };
+    foreach (var argument in command.Arguments)
+    {
+        start.ArgumentList.Add(argument);
+    }
+
+    using var process = System.Diagnostics.Process.Start(start);
+    if (process is null)
+    {
+        return Fail($"Failed to start {command.FileName}");
+    }
+
+    var stdout = process.StandardOutput.ReadToEnd();
+    var stderr = process.StandardError.ReadToEnd();
+    process.WaitForExit();
+    if (!string.IsNullOrWhiteSpace(stdout))
+    {
+        Console.Write(stdout);
+    }
+
+    if (!string.IsNullOrWhiteSpace(stderr))
+    {
+        Console.Error.Write(stderr);
+    }
+
+    return process.ExitCode;
+}
+
+static bool Has(string[] args, string name)
+    => args.Any(a => string.Equals(a, name, StringComparison.OrdinalIgnoreCase));
+
 static async Task<MyVpnApiClient> LoginClientAsync(string[] args)
 {
     var api = Require(args, "--api");
@@ -206,10 +331,14 @@ Commands:
   refresh --api <url> --refresh-token <token>
   logout --api <url> --refresh-token <token>
   delete-account --api <url> --email <email> --password <password>
+  connect --api <url> --email <email> --password <password> [--out <file.conf>] [--server-id <guid>] [--dry-run] [--skip-tunnel]
+  tunnel-up [--conf <file.conf>] [--dry-run]
+  tunnel-down [--conf <file.conf>] [--dry-run]
 
 Notes:
   - Private keys are generated locally and never sent to the API.
-  - Native Wintun bring-up is not in this CLI. Import the .conf into WireGuard for Windows
-    and enable "Block untunneled traffic" for Kill Switch / leak blocking.
+  - connect writes a .conf then brings the tunnel up via WireGuard for Windows
+    (/installtunnelservice) or wg-quick. No shell. Exit 2 if WireGuard is not installed.
+  - After connect on Windows, enable "Block untunneled traffic" for Kill Switch.
 """);
 }

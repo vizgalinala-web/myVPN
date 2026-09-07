@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 9**: Backend API, client scaffolds, safe peer-sync apply, GitHub Actions CI, VPN-node ops packaging, privacy-by-design, and **account erasure** (`DELETE /api/account`).
+Privacy-focused VPN product. This repository currently delivers **Phase 10**: Backend API, clients, peer-sync, privacy-by-design, account erasure, and **local WireGuard tunnel up/down** from the Windows CLI (`connect` / `tunnel-up` / `tunnel-down`).
 
 ## Current stack
 
@@ -126,7 +126,7 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 
 ## Out of scope (current)
 
-- Full iOS Network Extension / Windows Wintun tunnel bring-up
+- Full iOS Network Extension / in-process Windows Wintun
 - Automated OS Kill Switch (WireGuard for Windows "Block untunneled traffic" / iOS `includeAllNetworks` remain operator steps)
 - Payments, admin UI, traffic collection
 

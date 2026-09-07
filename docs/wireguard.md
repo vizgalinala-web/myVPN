@@ -6,8 +6,10 @@ Phase 3 backend adds **client VPN configuration issuance** and **IP allocation**
 
 Still out of scope:
 
-- full native tunnel bring-up (Wintun / Network Extension)
-- automated OS Kill Switch (see [clients-tunnel.md](clients-tunnel.md) for WireGuard import + Block untunneled traffic)
+- in-process Wintun / iOS Network Extension
+- automated OS Kill Switch (see [clients-tunnel.md](clients-tunnel.md) for `connect` + Block untunneled traffic)
+
+The Windows CLI (`connect` / `tunnel-up` / `tunnel-down`) drives the official WireGuard helper or `wg-quick` without a shell.
 
 Phase 4 adds API client scaffolds under `clients/` and a dry-run peer sync helper under `tools/wg-peer-sync`.
 
