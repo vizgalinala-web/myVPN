@@ -24,6 +24,8 @@ try
         "connect" => await ConnectAsync(args),
         "tunnel-up" => TunnelUp(args),
         "tunnel-down" => TunnelDown(args),
+        "status" => Status(args),
+        "stop" => await StopAsync(args),
         _ => Fail($"Unknown command: {command}")
     };
 }
@@ -55,6 +57,12 @@ static async Task<int> RegisterAsync(string[] args)
 
 static async Task<int> LoginConfigAsync(string[] args)
 {
+    var (_, code) = await WriteConfigAsync(args);
+    return code;
+}
+
+static async Task<(ClientSession? Session, int Code)> WriteConfigAsync(string[] args)
+{
     var api = Require(args, "--api");
     var email = Require(args, "--email");
     var password = Require(args, "--password");
@@ -69,7 +77,7 @@ static async Task<int> LoginConfigAsync(string[] args)
     var servers = await client.GetServersAsync();
     if (servers.Servers.Count == 0)
     {
-        return Fail("No enabled servers returned by API.");
+        return (null, Fail("No enabled servers returned by API."));
     }
 
     var server = serverIdText is null
@@ -78,12 +86,22 @@ static async Task<int> LoginConfigAsync(string[] args)
 
     var config = await client.GetConfigurationAsync(device.Id, server.Id);
     var quick = MyVpnApiClient.BuildLocalQuickConfig(config, priv);
+    ClientSession? session = null;
     if (outPath is not null)
     {
         var full = Path.GetFullPath(outPath);
         Directory.CreateDirectory(Path.GetDirectoryName(full) ?? ".");
         await File.WriteAllTextAsync(full, quick);
         Console.WriteLine(full);
+        session = new ClientSession(
+            api,
+            email,
+            device.Id,
+            server.Id,
+            server.Name,
+            full,
+            DateTimeOffset.UtcNow);
+        ClientSessionStore.Save(session);
     }
     else
     {
@@ -92,7 +110,7 @@ static async Task<int> LoginConfigAsync(string[] args)
 
     Console.Error.WriteLine($"# deviceId={device.Id} server={server.Name} address={config.Address}");
     Console.Error.WriteLine("# PrivateKey included only in local output/file. It was not uploaded.");
-    return 0;
+    return (session, 0);
 }
 
 static async Task<int> ServersAsync(string[] args)
@@ -165,10 +183,15 @@ static async Task<int> ConnectAsync(string[] args)
 {
     var outPath = Get(args, "--out") ?? WireGuardTunnelPlanner.DefaultConfigPath();
     var loginArgs = WithOut(args, outPath);
-    var written = await LoginConfigAsync(loginArgs);
+    var (session, written) = await WriteConfigAsync(loginArgs);
     if (written != 0)
     {
         return written;
+    }
+
+    if (session is not null)
+    {
+        Console.Error.WriteLine($"# session={ClientSessionStore.DefaultPath()}");
     }
 
     if (Has(args, "--skip-tunnel"))
@@ -182,15 +205,78 @@ static async Task<int> ConnectAsync(string[] args)
 
 static int TunnelUp(string[] args)
 {
-    var conf = Get(args, "--conf") ?? Get(args, "--out") ?? WireGuardTunnelPlanner.DefaultConfigPath();
+    var conf = ResolveConf(args);
     return ApplyTunnel(conf, up: true, dryRun: Has(args, "--dry-run"));
 }
 
 static int TunnelDown(string[] args)
 {
-    var conf = Get(args, "--conf") ?? Get(args, "--out") ?? WireGuardTunnelPlanner.DefaultConfigPath();
+    var conf = ResolveConf(args);
     return ApplyTunnel(conf, up: false, dryRun: Has(args, "--dry-run"));
 }
+
+static int Status(string[] args)
+{
+    var sessionPath = Get(args, "--session") ?? ClientSessionStore.DefaultPath();
+    var session = ClientSessionStore.Load(sessionPath);
+    var windows = OperatingSystem.IsWindows();
+    var install = new WireGuardLocator(windows: windows).Find();
+
+    if (session is null)
+    {
+        Console.WriteLine("session=none");
+        Console.WriteLine($"wireguard={(install is null ? "missing" : install.Kind.ToString())}");
+        return 0;
+    }
+
+    Console.WriteLine($"api={session.Api}");
+    Console.WriteLine($"email={session.Email}");
+    Console.WriteLine($"deviceId={session.DeviceId}");
+    Console.WriteLine($"serverId={session.ServerId}");
+    Console.WriteLine($"server={session.ServerName}");
+    Console.WriteLine($"config={session.ConfigPath}");
+    Console.WriteLine($"configExists={File.Exists(session.ConfigPath)}");
+    Console.WriteLine($"savedAt={session.SavedAt:O}");
+    Console.WriteLine($"wireguard={(install is null ? "missing" : install.Kind.ToString())}");
+    Console.WriteLine($"session={Path.GetFullPath(sessionPath)}");
+    return 0;
+}
+
+static async Task<int> StopAsync(string[] args)
+{
+    var session = ClientSessionStore.Load(Get(args, "--session"));
+    var conf = Get(args, "--conf") ?? Get(args, "--out") ?? session?.ConfigPath ?? WireGuardTunnelPlanner.DefaultConfigPath();
+    var local = ApplyTunnel(conf, up: false, dryRun: Has(args, "--dry-run"));
+
+    if (Has(args, "--local-only") || Has(args, "--dry-run"))
+    {
+        return local;
+    }
+
+    var password = Get(args, "--password");
+    if (string.IsNullOrEmpty(password))
+    {
+        Console.Error.WriteLine("# Local tunnel stop attempted. Pass --password to also disconnect the API peer, or --local-only to skip.");
+        return local;
+    }
+
+    if (session is null)
+    {
+        return Fail("No session.json; pass --api --email --device-id as with disconnect, or run connect first.");
+    }
+
+    using var client = new MyVpnApiClient(new Uri(session.Api));
+    await client.LoginAsync(session.Email, password);
+    await client.DisconnectAsync(session.DeviceId);
+    Console.WriteLine($"Disconnected {session.DeviceId}");
+    return local == 0 ? 0 : local;
+}
+
+static string ResolveConf(string[] args)
+    => Get(args, "--conf")
+       ?? Get(args, "--out")
+       ?? ClientSessionStore.Load()?.ConfigPath
+       ?? WireGuardTunnelPlanner.DefaultConfigPath();
 
 static string[] WithOut(string[] args, string outPath)
 {
@@ -334,11 +420,15 @@ Commands:
   connect --api <url> --email <email> --password <password> [--out <file.conf>] [--server-id <guid>] [--dry-run] [--skip-tunnel]
   tunnel-up [--conf <file.conf>] [--dry-run]
   tunnel-down [--conf <file.conf>] [--dry-run]
+  status
+  stop [--password <password>] [--local-only] [--dry-run]
 
 Notes:
   - Private keys are generated locally and never sent to the API.
   - connect writes a .conf then brings the tunnel up via WireGuard for Windows
     (/installtunnelservice) or wg-quick. No shell. Exit 2 if WireGuard is not installed.
+  - connect also writes session.json (api, email, device id, config path) — never a password.
+  - stop brings the local tunnel down; with --password it also calls the API disconnect.
   - After connect on Windows, enable "Block untunneled traffic" for Kill Switch.
 """);
 }
