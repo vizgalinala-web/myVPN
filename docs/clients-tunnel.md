@@ -44,7 +44,15 @@ dotnet run --project clients/windows/MyVPN.Client.Cli -- disconnect \
   --device-id <guid>
 ```
 
-Manual import still works: **Import tunnel(s) from file** in the WireGuard app.
+`connect` writes `%USERPROFILE%\MyVPN\session.json` (or `~/.myvpn/session.json`) with API URL, email, device id, and config path. It never stores a password, refresh token, or private key.
+
+```bash
+dotnet run --project clients/windows/MyVPN.Client.Cli -- status
+dotnet run --project clients/windows/MyVPN.Client.Cli -- stop --password '...'
+dotnet run --project clients/windows/MyVPN.Client.Cli -- stop --local-only
+```
+
+`stop` runs `tunnel-down`. With `--password` it also calls `POST /api/devices/{id}/disconnect` using the saved device id.
 
 Erase the account (devices, tokens, peers):
 

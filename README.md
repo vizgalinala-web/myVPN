@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 10**: Backend API, clients, peer-sync, privacy-by-design, account erasure, and **local WireGuard tunnel up/down** from the Windows CLI (`connect` / `tunnel-up` / `tunnel-down`).
+Privacy-focused VPN product. This repository currently delivers **Phase 11**: Backend API, clients, peer-sync, privacy-by-design, account erasure, WireGuard tunnel up/down, and a **local CLI session** (`status` / `stop`) that never stores passwords.
 
 ## Current stack
 

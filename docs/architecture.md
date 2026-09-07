@@ -11,7 +11,8 @@
 - **Phase 7**: VPN-node ops docs + systemd unit, client tunnel import guide
 - **Phase 8**: Privacy-by-design (no client IP persistence, no traffic/DNS history)
 - **Phase 9**: `DELETE /api/account` erasure (user, devices, refresh tokens, VPN peers) + full-tunnel/Kill Switch import notes
-- **Phase 10** (current): CLI `connect` / `tunnel-up` / `tunnel-down` via WireGuard for Windows (`/installtunnelservice`) or `wg-quick` (no shell)
+- **Phase 10**: CLI `connect` / `tunnel-up` / `tunnel-down` via WireGuard for Windows (`/installtunnelservice`) or `wg-quick` (no shell)
+- **Phase 11** (current): local `session.json` (no secrets) plus CLI `status` / `stop`
 - **Later**: Network Extension / in-process Wintun, automated Kill Switch enforcement
 
 See [wireguard.md](wireguard.md), [ops.md](ops.md), [clients-tunnel.md](clients-tunnel.md), and [../clients/README.md](../clients/README.md).
