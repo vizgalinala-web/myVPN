@@ -10,12 +10,14 @@ public interface IUserRepository
     Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken = default);
     Task AddAsync(User user, CancellationToken cancellationToken = default);
+    void Remove(User user);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IDeviceRepository
 {
     Task<IReadOnlyList<Device>> ListByUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Device>> ListByUserTrackedAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Device?> FindByIdForUserAsync(Guid deviceId, Guid userId, CancellationToken cancellationToken = default);
     Task<bool> PublicKeyExistsAsync(string publicKey, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListAssignedVpnAddressesAsync(CancellationToken cancellationToken = default);
@@ -42,6 +44,7 @@ public interface IRefreshTokenRepository
     Task AddAsync(RefreshToken token, CancellationToken cancellationToken = default);
     Task RevokeFamilyAsync(Guid tokenFamilyId, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
     Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
+    Task DeleteAllForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<int> DeleteExpiredOrRevokedAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

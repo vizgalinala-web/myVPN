@@ -23,6 +23,8 @@ public sealed class UserRepository : IUserRepository
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         => await _db.Users.AddAsync(user, cancellationToken);
 
+    public void Remove(User user) => _db.Users.Remove(user);
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => _db.SaveChangesAsync(cancellationToken);
 }
@@ -37,6 +39,11 @@ public sealed class DeviceRepository : IDeviceRepository
         => await _db.Devices.AsNoTracking()
             .Where(d => d.UserId == userId)
             .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Device>> ListByUserTrackedAsync(Guid userId, CancellationToken cancellationToken = default)
+        => await _db.Devices
+            .Where(d => d.UserId == userId)
             .ToListAsync(cancellationToken);
 
     public Task<Device?> FindByIdForUserAsync(Guid deviceId, Guid userId, CancellationToken cancellationToken = default)
@@ -183,6 +190,27 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
         {
             token.RevokedAt = revokedAt;
         }
+    }
+
+    public async Task DeleteAllForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var tokens = await _db.RefreshTokens
+            .Where(t => t.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        if (tokens.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var token in tokens)
+        {
+            token.ReplacedByTokenId = null;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _db.RefreshTokens.RemoveRange(tokens);
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<int> DeleteExpiredOrRevokedAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default)

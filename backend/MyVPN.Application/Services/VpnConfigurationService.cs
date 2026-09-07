@@ -136,6 +136,9 @@ public sealed class VpnConfigurationService
         sb.AppendLine($"Address = {address}");
         sb.AppendLine($"DNS = {dns}");
         sb.AppendLine("# PrivateKey is never provided by the API. Set it on the client only.");
+        sb.AppendLine("# Full tunnel (IPv4+IPv6). Enable OS Kill Switch after import to block leaks:");
+        sb.AppendLine("# Windows: WireGuard → Activate → Block untunneled traffic");
+        sb.AppendLine("# iOS: Packet Tunnel includeAllNetworks / excludeLocalNetworks=false");
         sb.AppendLine();
         sb.AppendLine("[Peer]");
         sb.AppendLine($"PublicKey = {peer.PublicKey}");

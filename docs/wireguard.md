@@ -7,8 +7,7 @@ Phase 3 backend adds **client VPN configuration issuance** and **IP allocation**
 Still out of scope:
 
 - full native tunnel bring-up (Wintun / Network Extension)
-- production `wg set` apply on VPN nodes (dry-run helper only — see `tools/wg-peer-sync`)
-- Kill Switch / DNS leak protection
+- automated OS Kill Switch (see [clients-tunnel.md](clients-tunnel.md) for WireGuard import + Block untunneled traffic)
 
 Phase 4 adds API client scaffolds under `clients/` and a dry-run peer sync helper under `tools/wg-peer-sync`.
 

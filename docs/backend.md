@@ -108,6 +108,8 @@ Placeholder public keys only. No production credentials. No default test user wi
 | POST /api/auth/login | 200 | 401, 403 inactive, 429 |
 | POST /api/auth/refresh | 200 | 401, 429 |
 | POST /api/auth/logout | 204 | 429 |
+| POST /api/auth/change-password | 204 | Bearer; 400, 401, 429 |
+| DELETE /api/account | 204 | Bearer + password body; 400, 401, 429 |
 | GET /api/me | 200 | 401 |
 | GET /api/servers | 200 | **Public**; enabled only |
 | GET /api/devices | 200 | 401 |
@@ -173,10 +175,12 @@ dotnet test backend/MyVPN.sln
 - No email verification / password reset
 - No admin API for servers (seed/internal only)
 
-## Privacy / account lifecycle (TODO)
+## Privacy / account lifecycle
 
-- [ ] `DELETE /api/account` — delete user, devices, refresh tokens, and VPN peers (future phase)
+- [x] `DELETE /api/account` — delete user, devices, refresh tokens, and VPN peers after password confirmation
 - [ ] Privacy policy + App Store privacy answers before public release
+
+`DELETE /api/account` requires a Bearer access token and JSON `{ "password": "..." }`. Wrong password returns **401** `INVALID_CREDENTIALS` (same shape as login). Success is **204**. The email may be registered again. Access tokens already issued remain valid until `exp` (no denylist).
 
 See [privacy-testing.md](privacy-testing.md) and [security.md](security.md).
 

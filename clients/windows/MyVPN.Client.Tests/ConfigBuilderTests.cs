@@ -30,6 +30,7 @@ public sealed class ConfigBuilderTests
         quick.Should().Contain("Endpoint = de1.example.com:51820");
         quick.Should().Contain("AllowedIPs = 0.0.0.0/0, ::/0");
         quick.Should().Contain("PersistentKeepalive = 25");
+        quick.Should().Contain("Block untunneled traffic");
         quick.Should().NotContain("\r");
     }
 }

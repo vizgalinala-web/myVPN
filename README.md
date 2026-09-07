@@ -1,6 +1,6 @@
 # MyVPN
 
-Privacy-focused VPN product. This repository currently delivers **Phase 7**: Backend API, client scaffolds, safe peer-sync apply, GitHub Actions CI, and VPN-node ops packaging notes.
+Privacy-focused VPN product. This repository currently delivers **Phase 9**: Backend API, client scaffolds, safe peer-sync apply, GitHub Actions CI, VPN-node ops packaging, privacy-by-design, and **account erasure** (`DELETE /api/account`).
 
 ## Current stack
 
@@ -112,6 +112,7 @@ Do **not** commit production secrets.
 | POST | `/api/auth/refresh` | Public (refresh token body) |
 | POST | `/api/auth/logout` | Public (refresh token body) |
 | POST | `/api/auth/change-password` | Bearer |
+| DELETE | `/api/account` | Bearer (body: current password) |
 | GET | `/api/me` | Bearer |
 | GET | `/api/servers` | Public (enabled only) |
 | GET | `/api/devices` | Bearer |
@@ -126,7 +127,7 @@ See [docs/backend.md](docs/backend.md) and [docs/security.md](docs/security.md).
 ## Out of scope (current)
 
 - Full iOS Network Extension / Windows Wintun tunnel bring-up
-- Kill Switch / DNS leak protection (see interim notes in [clients-tunnel.md](docs/clients-tunnel.md))
+- Automated OS Kill Switch (WireGuard for Windows "Block untunneled traffic" / iOS `includeAllNetworks` remain operator steps)
 - Payments, admin UI, traffic collection
 
 ## Documentation

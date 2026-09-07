@@ -14,7 +14,7 @@ Record pass/fail evidence in this document or linked CI artifacts.
 | Device public key unique | DB unique index on `devices.public_key` | Migration review |
 | Device limit | Max 5, `409` + `DEVICE_LIMIT_REACHED` | API + concurrent integration test |
 | Disabled device slot rule | `IsActive=false` still counts until delete | Unit test |
-| Account deletion (future) | `DELETE /api/account` removes user/devices/tokens/peers | TODO — see `docs/backend.md` |
+| Account deletion | `DELETE /api/account` removes user/devices/tokens/peers | API + unit + integration tests |
 
 ## Logging
 

@@ -8,8 +8,10 @@
 - **Phase 4**: Windows API client/CLI scaffold, iOS Swift API package scaffold, `wg-peer-sync` helper
 - **Phase 5**: Peer-sync remove detection + watch mode, Windows client unit tests/CLI expansion, Compose File peer-state wiring, GitHub Actions CI
 - **Phase 6**: Safe `wg` apply executor (env-gated, no shell), peer-sync planner tests, CLI `--out` config save
-- **Phase 7** (current): VPN-node ops docs + systemd unit, client tunnel import guide
-- **Later**: Network Extension / Wintun tunnels, Kill Switch, DNS leak protection
+- **Phase 7**: VPN-node ops docs + systemd unit, client tunnel import guide
+- **Phase 8**: Privacy-by-design (no client IP persistence, no traffic/DNS history)
+- **Phase 9** (current): `DELETE /api/account` erasure (user, devices, refresh tokens, VPN peers) + full-tunnel/Kill Switch import notes
+- **Later**: Network Extension / Wintun tunnels, automated Kill Switch enforcement
 
 See [wireguard.md](wireguard.md), [ops.md](ops.md), [clients-tunnel.md](clients-tunnel.md), and [../clients/README.md](../clients/README.md).
 

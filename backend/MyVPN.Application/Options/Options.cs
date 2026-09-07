@@ -36,6 +36,7 @@ public sealed class RateLimitOptions
     public RateLimitPolicyOptions Logout { get; set; } = new() { PermitLimit = 20, WindowSeconds = 60 };
     public RateLimitPolicyOptions DeviceConfiguration { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };
     public RateLimitPolicyOptions DeviceDisconnect { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };
+    public RateLimitPolicyOptions AccountDelete { get; set; } = new() { PermitLimit = 5, WindowSeconds = 60 };
 }
 
 public sealed class RateLimitPolicyOptions

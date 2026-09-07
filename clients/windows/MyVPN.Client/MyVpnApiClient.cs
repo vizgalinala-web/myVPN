@@ -89,8 +89,12 @@ public sealed class MyVpnApiClient : IDisposable
     public Task DisconnectAsync(Guid deviceId, CancellationToken ct = default)
         => PostNoContentAsync($"api/devices/{deviceId}/disconnect", new { }, ct);
 
+    public Task DeleteAccountAsync(string password, CancellationToken ct = default)
+        => SendJsonNoContentAsync(HttpMethod.Delete, "api/account", new { password }, ct);
+
     /// <summary>
     /// Builds a wg-quick config by inserting the local private key into the API template.
+    /// Full-tunnel AllowedIPs plus pinned DNS; enable the OS Kill Switch after import.
     /// </summary>
     public static string BuildLocalQuickConfig(DeviceVpnConfigurationResponse config, string privateKey)
     {
@@ -99,6 +103,9 @@ public sealed class MyVpnApiClient : IDisposable
         sb.AppendLine($"PrivateKey = {privateKey}");
         sb.AppendLine($"Address = {config.Address}");
         sb.AppendLine($"DNS = {config.Dns}");
+        sb.AppendLine("# Enable Kill Switch after import to block IPv4/IPv6/DNS leaks:");
+        sb.AppendLine("# Windows: WireGuard → Block untunneled traffic");
+        sb.AppendLine("# iOS: includeAllNetworks on the packet tunnel");
         sb.AppendLine();
         sb.AppendLine("[Peer]");
         sb.AppendLine($"PublicKey = {config.Peer.PublicKey}");
@@ -127,6 +134,16 @@ public sealed class MyVpnApiClient : IDisposable
     private async Task PostNoContentAsync(string path, object body, CancellationToken ct)
     {
         using var response = await _http.PostAsJsonAsync(path, body, JsonOptions, ct);
+        await EnsureSuccessAsync(response, ct);
+    }
+
+    private async Task SendJsonNoContentAsync(HttpMethod method, string path, object body, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(method, path)
+        {
+            Content = JsonContent.Create(body, options: JsonOptions)
+        };
+        using var response = await _http.SendAsync(request, ct);
         await EnsureSuccessAsync(response, ct);
     }
 

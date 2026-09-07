@@ -20,6 +20,7 @@ try
         "disconnect" => await DisconnectAsync(args),
         "refresh" => await RefreshAsync(args),
         "logout" => await LogoutAsync(args),
+        "delete-account" => await DeleteAccountAsync(args),
         _ => Fail($"Unknown command: {command}")
     };
 }
@@ -148,6 +149,15 @@ static async Task<int> LogoutAsync(string[] args)
     return 0;
 }
 
+static async Task<int> DeleteAccountAsync(string[] args)
+{
+    var password = Require(args, "--password");
+    using var client = await LoginClientAsync(args);
+    await client.DeleteAccountAsync(password);
+    Console.WriteLine("Account deleted.");
+    return 0;
+}
+
 static async Task<MyVpnApiClient> LoginClientAsync(string[] args)
 {
     var api = Require(args, "--api");
@@ -183,7 +193,7 @@ static int Fail(string message)
 static void PrintHelp()
 {
     Console.WriteLine("""
-MyVPN Windows client CLI (Phase 5)
+MyVPN Windows client CLI
 
 Commands:
   keygen
@@ -195,9 +205,11 @@ Commands:
   disconnect --api <url> --email <email> --password <password> --device-id <guid>
   refresh --api <url> --refresh-token <token>
   logout --api <url> --refresh-token <token>
+  delete-account --api <url> --email <email> --password <password>
 
 Notes:
   - Private keys are generated locally and never sent to the API.
-  - Tunnel bring-up / Kill Switch are not implemented in this CLI yet.
+  - Native Wintun bring-up is not in this CLI. Import the .conf into WireGuard for Windows
+    and enable "Block untunneled traffic" for Kill Switch / leak blocking.
 """);
 }

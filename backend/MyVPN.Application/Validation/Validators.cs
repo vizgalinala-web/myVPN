@@ -110,6 +110,14 @@ public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePas
     }
 }
 
+public sealed class DeleteAccountRequestValidator : AbstractValidator<DeleteAccountRequest>
+{
+    public DeleteAccountRequestValidator()
+    {
+        RuleFor(x => x.Password).NotEmpty().MaximumLength(PasswordPolicy.MaxLength);
+    }
+}
+
 public sealed class CreateDeviceRequestValidator : AbstractValidator<CreateDeviceRequest>
 {
     private static readonly Regex ControlChars = new(@"[\p{C}]", RegexOptions.Compiled);
